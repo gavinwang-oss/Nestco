@@ -976,7 +976,13 @@ function BrowseContent() {
         if (toCompare.length < 2) {
           setMessages((prev) => [...prev, { role: "ai", content: "I need two specific listings to compare. Try: \"compare 2540 Channing Way and 2134 Bowditch St\"." }]);
         } else {
-          const queue = displayedListings.filter((l) => !toCompare.some((c) => c.id === l.id));
+          // If match scores exist, only queue listings that scored above 0 (relevant to current search)
+          // Otherwise fall back to all displayed listings
+          const hasScores = Object.keys(matchScores).length > 0;
+          const relevantListings = hasScores
+            ? displayedListings.filter((l) => (matchScores[l.id] ?? 0) > 0)
+            : displayedListings;
+          const queue = relevantListings.filter((l) => !toCompare.some((c) => c.id === l.id));
           setCompareListings(toCompare);
           setCompareMode(true);
           setCompareQueue(queue);
