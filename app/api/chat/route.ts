@@ -59,6 +59,14 @@ function createSupabaseClient() {
   );
 }
 
+function createUserSupabaseClient(token: string) {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { global: { headers: { Authorization: `Bearer ${token}` } } }
+  );
+}
+
 async function checkRateLimit(userId: string, supabase: ReturnType<typeof createSupabaseClient>): Promise<boolean> {
   const { data, error } = await supabase.rpc("increment_chat_usage", {
     p_user_id: userId,
@@ -184,7 +192,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!(await checkRateLimit(user.id, supabase))) {
+    // User-authenticated client — needed for RLS-protected tables (saved_listings, profiles)
+    const userSupabase = createUserSupabaseClient(token);
+
+    if (!(await checkRateLimit(user.id, userSupabase))) {
       return NextResponse.json(
         { content: `You've hit the daily limit of ${DAILY_MESSAGE_LIMIT} AI messages. Come back tomorrow!` },
         { status: 429 }
@@ -205,8 +216,8 @@ export async function POST(req: NextRequest) {
 
     const [listingsResult, savedResult, profileResult] = await Promise.all([
       supabase.from("listings").select("*").order("created_at", { ascending: false }),
-      supabase.from("saved_listings").select("listing_id").eq("user_id", user.id),
-      supabase
+      userSupabase.from("saved_listings").select("listing_id").eq("user_id", user.id),
+      userSupabase
         .from("profiles")
         .select("name, age, year_in_school, major, gender")
         .eq("user_id", user.id)
