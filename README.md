@@ -1,36 +1,49 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Nestco
+
+UC Berkeley student sublet marketplace with AI-powered search, privacy-first messaging, and a mutual match system.
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Create a `.env.local` file:
 
-## Learn More
+```
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+ANTHROPIC_API_KEY=your_anthropic_key
+```
 
-To learn more about Next.js, take a look at the following resources:
+## What it does
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Browse** — Authenticated AI chat filters and ranks listings in real time based on natural language input
+- **Create** — Multi-step listing form with photo upload
+- **Inbox** — Instagram-style DMs with a mutual match mechanic (names hidden until both parties match)
+- **Requests** — Post what you're looking for; get notified when a new listing matches
+- **Profile** — Name reveal info plus age, year, major, and gender for optional intro-message drafts
+- **Saved** — Bookmarked listings
+- **TOS** — Terms of Service at `/tos`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Tech Stack
 
-## Deploy on Vercel
+- Next.js 16 (App Router, TypeScript)
+- Supabase (Postgres, Auth, Realtime, Storage)
+- Tailwind CSS v4
+- Anthropic Claude API (`claude-haiku-4-5`)
+- Framer Motion
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+See `AGENTS.md` for full codebase documentation.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Security Notes
+
+- `/api/chat` requires a Supabase Bearer token. The server loads listings, saved IDs, and profile context directly from Supabase instead of trusting client-provided copies.
+- AI-drafted intro messages must not include race, ethnicity, cultural background, religion, national origin, or the user's name.
+- Waitlist detail updates require the `waitlist_id` returned by the initial waitlist insert, so details are not updated by email alone.
