@@ -254,10 +254,8 @@ Format:
 
 Rules:
 - rankedIds lists listing IDs [${allIds.join(", ")}] ordered by relevance to the user's accumulated criteria.
-- scores maps listing IDs to 0-100 match percentages. Only score criteria explicitly mentioned by the user.
-- Use graduated scoring for price and distance rather than hard zeroes for small misses.
+- scores maps listing IDs to 0-100 match percentages. When the user mentions ANY specific criteria (price, dates, gender preference, furnishing, utilities, roommates, distance, pets, parking, etc.), score EVERY SINGLE listing ID — do not omit any. Listings that match well score 80-100, partial matches 40-79, incompatible listings score 10-30. Never omit a listing from scores once criteria exist. Use graduated scoring for price (full score within 10% of budget, partial for slightly over) and distance. Only hard-zero a listing if it is completely incompatible (e.g. wrong gender for a gender-locked listing). If the user has not mentioned any criteria at all, set scores to {}.
 - For gender, distinguish who can move in from the gender of existing roommates. Only use listing fields provided above. Do not infer or recommend based on race, ethnicity, religion, national origin, or other protected characteristics.
-- If the user hasn't mentioned specific criteria, omit scores.
 - Keep content to 2-4 sentences. Do not list every listing in content; the UI shows listing cards.
 - For message drafts, do not include the user's name. Use only age, gender, year, and major when available. Never include race, ethnicity, cultural background, religion, or national origin.
 - When asked about listings, refer to specific ones by address and price.
