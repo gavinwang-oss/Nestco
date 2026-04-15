@@ -52,8 +52,6 @@ type ChatResponse = {
   draftContent?: unknown;
 };
 
-const userMessageCounts = new Map<string, { count: number; date: string }>();
-
 function createSupabaseClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -61,16 +59,17 @@ function createSupabaseClient() {
   );
 }
 
-function checkRateLimit(userId: string): boolean {
-  const today = new Date().toISOString().split("T")[0];
-  const entry = userMessageCounts.get(userId);
-  if (!entry || entry.date !== today) {
-    userMessageCounts.set(userId, { count: 1, date: today });
+async function checkRateLimit(userId: string, supabase: ReturnType<typeof createSupabaseClient>): Promise<boolean> {
+  const { data, error } = await supabase.rpc("increment_chat_usage", {
+    p_user_id: userId,
+    p_limit: DAILY_MESSAGE_LIMIT,
+  });
+  if (error) {
+    // If the table/function doesn't exist yet, fail open rather than blocking all users
+    console.error("Rate limit check failed:", error.message);
     return true;
   }
-  if (entry.count >= DAILY_MESSAGE_LIMIT) return false;
-  entry.count++;
-  return true;
+  return data === true;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -185,7 +184,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!checkRateLimit(user.id)) {
+    if (!(await checkRateLimit(user.id, supabase))) {
       return NextResponse.json(
         { content: `You've hit the daily limit of ${DAILY_MESSAGE_LIMIT} AI messages. Come back tomorrow!` },
         { status: 429 }
