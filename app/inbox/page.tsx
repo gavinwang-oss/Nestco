@@ -15,7 +15,7 @@ type DbMessage = {
   listing_id: number;
   content: string;
   created_at: string;
-  listing?: { id: number; address: string; type: string; user_id: string } | null;
+  listing?: { id: number; title?: string | null; address: string; type: string; user_id: string } | null;
 };
 
 type MatchRecord = {
@@ -37,7 +37,7 @@ type Notification = {
   reason: string;
   read: boolean;
   created_at: string;
-  listing?: { address: string; type: string; price: number };
+  listing?: { title?: string | null; address: string; type: string; price: number };
 };
 
 type Conversation = {
@@ -171,7 +171,7 @@ export default function Inbox() {
     const [msgsResult, matchesResult, notifsResult] = await Promise.all([
       supabase
         .from("messages")
-        .select("*, listing:listings(id, address, type, user_id)")
+        .select("*, listing:listings(id, title, address, type, user_id)")
         .order("created_at", { ascending: true }),
       supabase
         .from("matches")
@@ -179,7 +179,7 @@ export default function Inbox() {
         .or(`renter_id.eq.${user.id},lister_id.eq.${user.id}`),
       supabase
         .from("notifications")
-        .select("*, listing:listings(address, type, price)")
+        .select("*, listing:listings(title, address, type, price)")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false }),
     ]);
@@ -213,7 +213,7 @@ export default function Inbox() {
         if (raw.sender_id !== user.id && raw.recipient_id !== user.id) return;
         const { data } = await supabase
           .from("messages")
-          .select("*, listing:listings(id, address, type, user_id)")
+          .select("*, listing:listings(id, title, address, type, user_id)")
           .eq("id", raw.id)
           .single();
         if (data) setAllMessages((prev) => [...prev, data as DbMessage]);
@@ -266,13 +266,13 @@ export default function Inbox() {
       const otherId = msg.sender_id === user.id ? msg.recipient_id : msg.sender_id;
       if (!otherId) continue;
       const key = `${msg.listing_id}__${otherId}`;
-      const listing = msg.listing as { id: number; address: string; type: string; user_id: string } | null;
+      const listing = msg.listing as { id: number; title?: string | null; address: string; type: string; user_id: string } | null;
 
       if (!map.has(key)) {
         map.set(key, {
           key,
           listing_id: msg.listing_id,
-          listing_address: listing?.address ?? `Listing #${msg.listing_id}`,
+          listing_address: listing?.title ?? listing?.address ?? `Listing #${msg.listing_id}`,
           listing_type: listing?.type ?? "",
           listing_user_id: listing?.user_id ?? "",
           other_user_id: otherId,
@@ -395,7 +395,7 @@ export default function Inbox() {
         content,
         sender_email: user.email,
       })
-      .select("*, listing:listings(id, address, type, user_id)")
+      .select("*, listing:listings(id, title, address, type, user_id)")
       .single();
     if (data) setAllMessages((prev) => [...prev, data as DbMessage]);
     setSending(false);
@@ -660,7 +660,7 @@ export default function Inbox() {
                         <span className="text-xs text-gray-400 uppercase tracking-wide font-medium">New match for your request</span>
                       </div>
                       <p className="text-base font-semibold text-gray-900 truncate">
-                        {notif.listing?.address ?? `Listing #${notif.listing_id}`}
+                        {notif.listing?.title ?? notif.listing?.address ?? `Listing #${notif.listing_id}`}
                       </p>
                       <p className="text-sm text-gray-500 mt-0.5 capitalize">
                         {notif.listing?.type} · ${notif.listing?.price?.toLocaleString()}/mo

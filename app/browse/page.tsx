@@ -364,7 +364,8 @@ function ListingDetail({
         <div className="p-6">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <h1 className="text-lg font-bold text-gray-950 mb-0.5">{listing.address}</h1>
+              <h1 className="text-lg font-bold text-gray-950 mb-0.5">{listing.title ?? listing.address}</h1>
+              {listing.title && <p className="text-xs text-gray-500 mb-0.5">{listing.address}</p>}
               <p className="text-xs text-gray-400">
                 Available {new Date(listing.available_from).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
                 {listing.available_to && ` – ${new Date(listing.available_to).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`}
@@ -656,7 +657,8 @@ function ComparePanel({ listings, matchScores, savedIds, onToggleSave, onSelect,
               </div>
               <div className="px-5 py-3 border-b border-black/[0.06]">
                 <p className="text-[10px] text-gray-400 mb-0.5">{formatType(l.type)}</p>
-                <p className="font-semibold text-gray-900 text-sm leading-tight">{l.address}</p>
+                <p className="font-semibold text-gray-900 text-sm leading-tight">{l.title ?? l.address}</p>
+                {l.title && <p className="text-[10px] text-gray-400 mt-0.5">{l.address}</p>}
                 <button onClick={() => onSelect(l)} className="mt-2 text-[10px] text-black underline underline-offset-2 cursor-pointer">
                   View full listing →
                 </button>
@@ -1485,7 +1487,7 @@ function BrowseContent() {
                         <div className={`w-3.5 h-3.5 rounded-full flex-shrink-0 overflow-hidden ${l.photos?.[0] ? "" : `bg-gradient-to-br ${GRADIENTS[l.id % GRADIENTS.length]}`}`}>
                           {l.photos?.[0] && <img src={l.photos[0]} alt="" className="w-full h-full object-cover" />}
                         </div>
-                        {l.address.split(" ").slice(0, 2).join(" ")}
+                        {l.title ? l.title.split(" ").slice(0, 3).join(" ") : l.address.split(" ").slice(0, 2).join(" ")}
                       </button>
                     ))}
                   </div>

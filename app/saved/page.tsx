@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 type Listing = {
   id: number;
+  title: string | null;
   type: string;
   address: string;
   price: number;
@@ -176,7 +177,8 @@ export default function Saved() {
                         className="flex-1 cursor-pointer"
                         onClick={() => router.push(`/browse?listing=${listing.id}`)}
                       >
-                        <h3 className="font-semibold text-gray-900 text-sm leading-tight">{listing.address}</h3>
+                        <h3 className="font-semibold text-gray-900 text-sm leading-tight">{listing.title ?? listing.address}</h3>
+                        {listing.title && <p className="text-[10px] text-gray-400">{listing.address}</p>}
                         <p className="text-xs text-gray-400 mt-0.5">Avail. {availDate}</p>
                       </div>
                       <p className="text-sm font-bold text-gray-900 flex-shrink-0">
