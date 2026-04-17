@@ -108,7 +108,7 @@ function EditModal({ listing, onClose, onSave }: {
       type,
       address,
       price: Number(price),
-      available_from: availableFrom || null,
+      available_from: availableFrom || listing.available_from,
       available_to: availableTo || null,
       description,
       furnished,
