@@ -53,7 +53,17 @@ function hasDetails(body: WaitlistBody): boolean {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = (await req.json()) as WaitlistBody;
+    let body: WaitlistBody;
+    const contentType = req.headers.get("content-type") ?? "";
+    if (contentType.includes("multipart/form-data")) {
+      const fd = await req.formData();
+      body = Object.fromEntries(
+        [...fd.keys()].filter((k) => k !== "photos").map((k) => [k, fd.get(k)])
+      ) as WaitlistBody;
+      (body as Record<string, unknown>)._photoFiles = fd.getAll("photos").filter((v) => v instanceof File && v.size > 0) as File[];
+    } else {
+      body = (await req.json()) as WaitlistBody;
+    }
     const email = cleanEmail(body.email);
 
     if (!email) {
@@ -126,6 +136,22 @@ export async function POST(req: NextRequest) {
       const parking = cleanBool(body.parking);
       const genderPreference = cleanString(body.gender_preference, 20) ?? "any";
 
+      // Upload photos if provided
+      const photoFiles = ((body as Record<string, unknown>)._photoFiles as File[]) ?? [];
+      const photoUrls: string[] = [];
+      for (const file of photoFiles.slice(0, 10)) {
+        const ext = file.name.split(".").pop() ?? "jpg";
+        const path = `pending/${crypto.randomUUID()}.${ext}`;
+        const buffer = Buffer.from(await file.arrayBuffer());
+        const { error: uploadError } = await serviceClient.storage
+          .from("listing-photos")
+          .upload(path, buffer, { contentType: file.type, upsert: false });
+        if (!uploadError) {
+          const { data: urlData } = serviceClient.storage.from("listing-photos").getPublicUrl(path);
+          photoUrls.push(urlData.publicUrl);
+        }
+      }
+
       const { error: plError } = await serviceClient
         .from("pending_listings")
         .insert([{
@@ -141,6 +167,7 @@ export async function POST(req: NextRequest) {
           pets,
           parking,
           gender_preference: genderPreference,
+          photos: photoUrls.length > 0 ? photoUrls : null,
           status: "pending",
         }]);
 

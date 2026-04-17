@@ -167,25 +167,25 @@ export default function Home() {
       return;
     }
     setDetailsLoading(true);
+    const formData = new FormData();
+    formData.append("email", email);
+    formData.append("waitlist_id", String(waitlistId ?? ""));
+    formData.append("intent", intent ?? "");
+    formData.append("listing_type", listingType);
+    formData.append("location", location);
+    formData.append("price", price);
+    formData.append("available_from", availableFrom);
+    formData.append("available_to", availableTo);
+    formData.append("description", description);
+    formData.append("furnished", String(furnished));
+    formData.append("utilities_included", String(utilitiesIncluded));
+    formData.append("pets", String(pets));
+    formData.append("parking", String(parking));
+    formData.append("gender_preference", genderPreference);
+    photos.forEach((file) => formData.append("photos", file));
     await fetch("/api/waitlist", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email,
-        waitlist_id: waitlistId,
-        intent,
-        listing_type: listingType,
-        location,
-        price,
-        available_from: availableFrom,
-        available_to: availableTo,
-        description,
-        furnished,
-        utilities_included: utilitiesIncluded,
-        pets,
-        parking,
-        gender_preference: genderPreference,
-      }),
+      body: formData,
     });
     setDetailsLoading(false);
     setDetailsSubmitted(true);
