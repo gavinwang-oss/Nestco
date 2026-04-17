@@ -1,21 +1,23 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
 export default function AuthCallback() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
+    const next = searchParams.get("next") ?? "/browse";
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session) {
-        router.push("/browse");
+        router.push(next);
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [router]);
+  }, [router, searchParams]);
 
   return (
     <div

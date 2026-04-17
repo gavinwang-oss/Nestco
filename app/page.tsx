@@ -120,7 +120,9 @@ export default function Home() {
   const [pets, setPets] = useState(false);
   const [parking, setParking] = useState(false);
   const [genderPreference, setGenderPreference] = useState("any");
-  const [photos, setPhotos] = useState<FileList | null>(null);
+  const [photos, setPhotos] = useState<File[]>([]);
+  const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
+  const photoInputRef = useRef<HTMLInputElement>(null);
   const [detailsSubmitted, setDetailsSubmitted] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [typeError, setTypeError] = useState(false);
@@ -480,21 +482,50 @@ export default function Home() {
                     {/* Photos */}
                     <div>
                       <label className="text-xs font-medium text-gray-500 mb-1.5 block">Photos</label>
-                      <label className="flex flex-col items-center justify-center w-full h-24 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 cursor-pointer hover:border-gray-400 transition-colors">
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="mb-1.5">
-                          <path d="M3 13l4-4 3 3 3-4 4 5H3z" stroke="#9ca3af" strokeWidth="1.5" strokeLinejoin="round" />
-                          <circle cx="6.5" cy="6.5" r="1.5" stroke="#9ca3af" strokeWidth="1.5" />
-                          <rect x="1.5" y="1.5" width="17" height="17" rx="2.5" stroke="#9ca3af" strokeWidth="1.5" />
-                        </svg>
-                        <span className="text-xs text-gray-400">
-                          {photos && photos.length > 0 ? `${photos.length} photo${photos.length > 1 ? "s" : ""} selected` : "Click to upload photos"}
-                        </span>
+                      {photoPreviews.length > 0 && (
+                        <div className="flex gap-2 flex-wrap mb-2">
+                          {photoPreviews.map((src, i) => (
+                            <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-gray-200">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={src} alt="" className="w-full h-full object-cover" />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newPhotos = photos.filter((_, idx) => idx !== i);
+                                  const newPreviews = photoPreviews.filter((_, idx) => idx !== i);
+                                  setPhotos(newPhotos);
+                                  setPhotoPreviews(newPreviews);
+                                }}
+                                className="absolute top-0.5 right-0.5 w-4 h-4 bg-black/60 rounded-full flex items-center justify-center cursor-pointer"
+                              >
+                                <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+                                  <path d="M1.5 1.5l5 5M6.5 1.5l-5 5" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+                                </svg>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <label className="flex flex-col items-center justify-center w-full h-16 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 cursor-pointer hover:border-gray-400 transition-colors">
+                        <span className="text-xs text-gray-400">{photoPreviews.length > 0 ? "+ Add more photos" : "Click to upload photos"}</span>
                         <input
+                          ref={photoInputRef}
                           type="file"
                           accept="image/*"
                           multiple
                           className="hidden"
-                          onChange={(e) => setPhotos(e.target.files)}
+                          onChange={(e) => {
+                            const newFiles = Array.from(e.target.files ?? []);
+                            setPhotos((prev) => [...prev, ...newFiles]);
+                            newFiles.forEach((file) => {
+                              const reader = new FileReader();
+                              reader.onload = (ev) => {
+                                setPhotoPreviews((prev) => [...prev, ev.target?.result as string]);
+                              };
+                              reader.readAsDataURL(file);
+                            });
+                            if (photoInputRef.current) photoInputRef.current.value = "";
+                          }}
                         />
                       </label>
                     </div>
