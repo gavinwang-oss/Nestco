@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
-export default function AuthCallback() {
+function AuthCallbackInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -19,6 +19,10 @@ export default function AuthCallback() {
     return () => subscription.unsubscribe();
   }, [router, searchParams]);
 
+  return null;
+}
+
+export default function AuthCallback() {
   return (
     <div
       className="min-h-screen flex items-center justify-center"
@@ -30,6 +34,9 @@ export default function AuthCallback() {
         </div>
         <p className="text-sm text-gray-500">Verifying your email...</p>
       </div>
+      <Suspense>
+        <AuthCallbackInner />
+      </Suspense>
     </div>
   );
 }
