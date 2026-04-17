@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import Link from "next/link";
 
@@ -8,7 +8,7 @@ type Status = "loading" | "creating" | "success" | "error" | "no_listing";
 
 export default function ActivatePage() {
   const [status, setStatus] = useState<Status>("loading");
-  const [listingId, setListingId] = useState<string | null>(null);
+  const activatedRef = useRef(false);
 
   useEffect(() => {
     const supabase = createClient(
@@ -17,6 +17,8 @@ export default function ActivatePage() {
     );
 
     const activate = async (accessToken: string) => {
+      if (activatedRef.current) return;
+      activatedRef.current = true;
       setStatus("creating");
       try {
         const res = await fetch("/api/activate-listing", {
@@ -26,8 +28,6 @@ export default function ActivatePage() {
           },
         });
         if (res.ok) {
-          const data = await res.json();
-          setListingId(data.listing_id ?? null);
           setStatus("success");
         } else if (res.status === 404) {
           setStatus("no_listing");
