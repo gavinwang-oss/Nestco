@@ -69,6 +69,37 @@ function NotificationCard() {
   );
 }
 
+function PillToggle({
+  value,
+  onChange,
+}: {
+  value: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <div className="flex gap-1.5">
+      <button
+        type="button"
+        onClick={() => onChange(false)}
+        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all cursor-pointer ${
+          !value ? "bg-black text-white border-black" : "bg-white text-gray-600 border-gray-200 hover:border-gray-400"
+        }`}
+      >
+        No
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange(true)}
+        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all cursor-pointer ${
+          value ? "bg-black text-white border-black" : "bg-white text-gray-600 border-gray-200 hover:border-gray-400"
+        }`}
+      >
+        Yes
+      </button>
+    </div>
+  );
+}
+
 export default function Home() {
   const [email, setEmail] = useState("");
   const [emailSubmitted, setEmailSubmitted] = useState(false);
@@ -83,6 +114,12 @@ export default function Home() {
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
   const [availableFrom, setAvailableFrom] = useState("");
+  const [availableTo, setAvailableTo] = useState("");
+  const [furnished, setFurnished] = useState(false);
+  const [utilitiesIncluded, setUtilitiesIncluded] = useState(false);
+  const [pets, setPets] = useState(false);
+  const [parking, setParking] = useState(false);
+  const [genderPreference, setGenderPreference] = useState("any");
   const [photos, setPhotos] = useState<FileList | null>(null);
   const [detailsSubmitted, setDetailsSubmitted] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(false);
@@ -139,7 +176,13 @@ export default function Home() {
         location,
         price,
         available_from: availableFrom,
+        available_to: availableTo,
         description,
+        furnished,
+        utilities_included: utilitiesIncluded,
+        pets,
+        parking,
+        gender_preference: genderPreference,
       }),
     });
     setDetailsLoading(false);
@@ -298,7 +341,7 @@ export default function Home() {
                 {intent === "list" && (
                   <form onSubmit={handleDetailsSubmit} className="flex flex-col gap-4">
                     <p className="text-sm text-gray-500 -mt-2">
-                      Share your listing details and we&apos;ll publish it automatically on launch day. All fields are optional.
+                      Share your listing details and we&apos;ll send you a link to publish it on Nestco.
                     </p>
 
                     {/* Type */}
@@ -307,7 +350,7 @@ export default function Home() {
                         Type <span className="text-red-400">*</span>
                       </label>
                       <div className="flex gap-2 flex-wrap">
-                        {["Full apartment", "Private room", "Shared room"].map((t) => (
+                        {["Private Room", "Shared Room", "Entire Studio", "Entire 1BR", "Entire 2BR"].map((t) => (
                           <button
                             key={t}
                             type="button"
@@ -351,15 +394,75 @@ export default function Home() {
                       />
                     </div>
 
-                    {/* Available from */}
+                    {/* Available from / to */}
+                    <div className="flex gap-3">
+                      <div className="flex-1">
+                        <label className="text-xs font-medium text-gray-500 mb-1.5 block">Available from</label>
+                        <input
+                          type="date"
+                          value={availableFrom}
+                          onChange={(e) => setAvailableFrom(e.target.value)}
+                          className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-black/10"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <label className="text-xs font-medium text-gray-500 mb-1.5 block">Available until</label>
+                        <input
+                          type="date"
+                          value={availableTo}
+                          onChange={(e) => setAvailableTo(e.target.value)}
+                          className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-black/10"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Toggles row 1 */}
+                    <div className="flex gap-4 flex-wrap">
+                      <div>
+                        <label className="text-xs font-medium text-gray-500 mb-1.5 block">Furnished</label>
+                        <PillToggle value={furnished} onChange={setFurnished} />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-gray-500 mb-1.5 block">Utilities included</label>
+                        <PillToggle value={utilitiesIncluded} onChange={setUtilitiesIncluded} />
+                      </div>
+                    </div>
+
+                    {/* Toggles row 2 */}
+                    <div className="flex gap-4 flex-wrap">
+                      <div>
+                        <label className="text-xs font-medium text-gray-500 mb-1.5 block">Pets ok</label>
+                        <PillToggle value={pets} onChange={setPets} />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-gray-500 mb-1.5 block">Parking</label>
+                        <PillToggle value={parking} onChange={setParking} />
+                      </div>
+                    </div>
+
+                    {/* Gender preference */}
                     <div>
-                      <label className="text-xs font-medium text-gray-500 mb-1.5 block">Available from</label>
-                      <input
-                        type="date"
-                        value={availableFrom}
-                        onChange={(e) => setAvailableFrom(e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-black/10"
-                      />
+                      <label className="text-xs font-medium text-gray-500 mb-1.5 block">Gender preference</label>
+                      <div className="flex gap-2 flex-wrap">
+                        {[
+                          { label: "Any", value: "any" },
+                          { label: "Female only", value: "female" },
+                          { label: "Male only", value: "male" },
+                        ].map((opt) => (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            onClick={() => setGenderPreference(opt.value)}
+                            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all cursor-pointer ${
+                              genderPreference === opt.value
+                                ? "bg-black text-white border-black"
+                                : "bg-white text-gray-600 border-gray-200 hover:border-gray-400"
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
                     </div>
 
                     {/* Description */}
@@ -402,7 +505,7 @@ export default function Home() {
                         disabled={detailsLoading}
                         className="flex-1 py-2.5 bg-black text-white text-sm font-semibold rounded-full hover:bg-gray-800 transition-all cursor-pointer disabled:opacity-60"
                       >
-                        {detailsLoading ? "Submitting..." : "Submit listing details"}
+                        {detailsLoading ? "Sending..." : "Send me the link to publish →"}
                       </button>
                       <button
                         type="button"
@@ -432,8 +535,17 @@ export default function Home() {
                     <path d="M3 8L6.5 11.5L13 5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </div>
-                <h3 className="text-lg font-bold text-gray-950 mb-1">All set!</h3>
-                <p className="text-sm text-gray-400">We&apos;ll be in touch when Nestco launches at Berkeley.</p>
+                {intent === "list" ? (
+                  <>
+                    <h3 className="text-lg font-bold text-gray-950 mb-1">Check your email!</h3>
+                    <p className="text-sm text-gray-400">We sent you a link to publish your listing on Nestco.</p>
+                  </>
+                ) : (
+                  <>
+                    <h3 className="text-lg font-bold text-gray-950 mb-1">All set!</h3>
+                    <p className="text-sm text-gray-400">We&apos;ll be in touch when Nestco launches at Berkeley.</p>
+                  </>
+                )}
               </div>
             )}
           </div>

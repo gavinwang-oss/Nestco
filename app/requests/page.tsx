@@ -147,9 +147,11 @@ function RequestCard({
         <p className="text-[11px] text-gray-400">
           Expires {formatDate(req.expires_at)}
         </p>
-        <p className="text-[11px] text-gray-400 truncate max-w-[160px]">
-          {req.user_email}
-        </p>
+        {isOwner && (
+          <p className="text-[11px] text-gray-400 truncate max-w-[160px]">
+            {req.user_email}
+          </p>
+        )}
       </div>
     </motion.div>
   );

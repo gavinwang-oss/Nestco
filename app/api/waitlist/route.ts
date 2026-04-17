@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 
 type WaitlistBody = {
@@ -9,7 +10,13 @@ type WaitlistBody = {
   location?: unknown;
   price?: unknown;
   available_from?: unknown;
+  available_to?: unknown;
   description?: unknown;
+  furnished?: unknown;
+  utilities_included?: unknown;
+  pets?: unknown;
+  parking?: unknown;
+  gender_preference?: unknown;
 };
 
 function cleanString(value: unknown, maxLength = 500): string | null {
@@ -22,6 +29,15 @@ function cleanEmail(value: unknown): string | null {
   const email = cleanString(value, 320)?.toLowerCase() ?? null;
   if (!email || !email.endsWith(".edu")) return null;
   return email;
+}
+
+function cleanBool(value: unknown): boolean {
+  return value === true || value === "true";
+}
+
+function cleanInt(value: unknown): number | null {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
 }
 
 function hasDetails(body: WaitlistBody): boolean {
@@ -87,6 +103,66 @@ export async function POST(req: NextRequest) {
 
     if (!data) {
       return NextResponse.json({ error: "Waitlist entry not found." }, { status: 404 });
+    }
+
+    // If intent is "list", also save to pending_listings and send magic link
+    const intent = cleanString(body.intent, 20);
+    if (intent === "list") {
+      const serviceClient = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        { auth: { autoRefreshToken: false, persistSession: false } }
+      );
+
+      const listingType = cleanString(body.listing_type, 80);
+      const address = cleanString(body.location, 200);
+      const price = cleanInt(body.price);
+      const availableFrom = cleanString(body.available_from, 30) || null;
+      const availableTo = cleanString(body.available_to, 30) || null;
+      const description = cleanString(body.description, 1_000);
+      const furnished = cleanBool(body.furnished);
+      const utilitiesIncluded = cleanBool(body.utilities_included);
+      const pets = cleanBool(body.pets);
+      const parking = cleanBool(body.parking);
+      const genderPreference = cleanString(body.gender_preference, 20) ?? "any";
+
+      const { error: plError } = await serviceClient
+        .from("pending_listings")
+        .insert([{
+          email,
+          listing_type: listingType,
+          address,
+          price,
+          available_from: availableFrom,
+          available_to: availableTo,
+          description,
+          furnished,
+          utilities_included: utilitiesIncluded,
+          pets,
+          parking,
+          gender_preference: genderPreference,
+          status: "pending",
+        }]);
+
+      if (plError) {
+        console.error("Failed to insert pending_listing:", plError.message);
+        // Non-fatal — don't block the response
+      }
+
+      // Send magic link via anon client
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+      const { error: otpError } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: appUrl + "/activate",
+          shouldCreateUser: true,
+        },
+      });
+
+      if (otpError) {
+        console.error("Failed to send magic link:", otpError.message);
+        // Non-fatal — waitlist entry is already saved
+      }
     }
 
     return NextResponse.json({ success: true }, { status: 200 });
