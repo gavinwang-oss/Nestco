@@ -146,7 +146,7 @@ export default function MyListings() {
                   key={listing.id}
                   className="bg-white rounded-2xl border border-black/[0.06] shadow-sm overflow-hidden flex"
                 >
-                  <div className="w-36 flex-shrink-0">
+                  <Link href={`/browse?listing=${listing.id}`} className="w-36 flex-shrink-0">
                     {hasPhoto ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -157,19 +157,19 @@ export default function MyListings() {
                     ) : (
                       <div className={`w-full h-full bg-gradient-to-br ${gradient} min-h-[120px]`} />
                     )}
-                  </div>
+                  </Link>
 
                   <div className="flex-1 p-5 flex flex-col justify-between">
                     <div>
                       <div className="flex items-start justify-between gap-2">
-                        <div>
+                        <Link href={`/browse?listing=${listing.id}`} className="hover:underline">
                           <p className="text-sm font-semibold text-gray-900 leading-snug">
                             {listing.address}
                           </p>
                           <p className="text-xs text-gray-400 mt-0.5 capitalize">
                             {listing.type}
                           </p>
-                        </div>
+                        </Link>
                         <span className="text-sm font-bold text-gray-900 flex-shrink-0">
                           ${listing.price.toLocaleString()}/mo
                         </span>
@@ -187,12 +187,20 @@ export default function MyListings() {
                       <span className="text-xs text-gray-300">
                         Listed {formatDate(listing.created_at)}
                       </span>
-                      <button
-                        onClick={() => handleDelete(listing)}
-                        className="px-3 py-1.5 text-xs font-medium text-red-600 border border-red-200 rounded-full hover:bg-red-50 transition-colors cursor-pointer"
-                      >
-                        Delete
-                      </button>
+                      <div className="flex gap-2">
+                        <Link
+                          href={`/browse?listing=${listing.id}`}
+                          className="px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-full hover:bg-gray-50 transition-colors"
+                        >
+                          View
+                        </Link>
+                        <button
+                          onClick={() => handleDelete(listing)}
+                          className="px-3 py-1.5 text-xs font-medium text-red-600 border border-red-200 rounded-full hover:bg-red-50 transition-colors cursor-pointer"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
