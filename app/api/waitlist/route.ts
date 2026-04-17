@@ -201,7 +201,12 @@ export async function POST(req: NextRequest) {
 
       if (otpError) {
         console.error("Failed to send magic link:", otpError.message);
-        // Non-fatal — waitlist entry is already saved
+        const isRateLimit = otpError.message.toLowerCase().includes("rate") || otpError.status === 429;
+        return NextResponse.json({
+          error: isRateLimit
+            ? "Too many attempts. Please wait a few minutes and try again."
+            : "Your listing was saved but we couldn't send the email. Please try again shortly.",
+        }, { status: 500 });
       }
     }
 
