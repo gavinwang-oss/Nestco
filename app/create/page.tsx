@@ -9,6 +9,7 @@ import { supabase } from "@/lib/supabase";
 const STEPS = ["Basics", "The place", "Roommates", "Details"];
 
 type Form = {
+  title: string;
   type: string;
   address: string;
   price: string;
@@ -30,6 +31,7 @@ type Form = {
 };
 
 const DEFAULT_FORM: Form = {
+  title: "",
   type: "",
   address: "",
   price: "",
@@ -171,6 +173,7 @@ export default function Create() {
       .insert([
         {
           user_id: user.id,
+          title: form.title.trim() || null,
           type: form.type,
           address: form.address,
           price: Number(form.price),
@@ -303,6 +306,19 @@ export default function Create() {
                       )
                     )}
                   </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-gray-500 block mb-1.5">
+                    Listing title
+                  </label>
+                  <input
+                    type="text"
+                    value={form.title}
+                    onChange={(e) => set("title", e.target.value)}
+                    placeholder="e.g. Cozy furnished single near Southside"
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-black/10"
+                  />
                 </div>
 
                 <div>

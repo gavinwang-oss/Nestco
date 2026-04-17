@@ -7,6 +7,7 @@ type WaitlistBody = {
   waitlist_id?: unknown;
   intent?: unknown;
   listing_type?: unknown;
+  listing_title?: unknown;
   location?: unknown;
   price?: unknown;
   available_from?: unknown;
@@ -138,6 +139,7 @@ export async function POST(req: NextRequest) {
     const intent = cleanString(body.intent, 20);
     if (intent === "list") {
       const listingType = cleanString(body.listing_type, 80);
+      const listingTitle = cleanString(body.listing_title, 120);
       const address = cleanString(body.location, 200);
       const price = cleanInt(body.price);
       const availableFrom = cleanString(body.available_from, 30) || null;
@@ -170,6 +172,7 @@ export async function POST(req: NextRequest) {
         .insert([{
           email,
           listing_type: listingType,
+          title: listingTitle,
           address,
           price,
           available_from: availableFrom,

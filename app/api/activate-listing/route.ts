@@ -64,6 +64,7 @@ export async function POST(req: NextRequest) {
       .from("listings")
       .insert([{
         user_id: user.id,
+        title: pending.title ?? null,
         type: pending.listing_type,
         address: pending.address,
         price: pending.price,

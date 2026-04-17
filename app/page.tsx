@@ -110,6 +110,7 @@ export default function Home() {
   // Step 2 state
   const [intent, setIntent] = useState<"find" | "list" | null>(null);
   const [listingType, setListingType] = useState("");
+  const [listingTitle, setListingTitle] = useState("");
   const [location, setLocation] = useState("");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
@@ -172,6 +173,7 @@ export default function Home() {
     formData.append("waitlist_id", String(waitlistId ?? ""));
     formData.append("intent", intent ?? "");
     formData.append("listing_type", listingType);
+    formData.append("listing_title", listingTitle);
     formData.append("location", location);
     formData.append("price", price);
     formData.append("available_from", availableFrom);
@@ -375,6 +377,18 @@ export default function Home() {
                         ))}
                       </div>
                       {typeError && <p className="text-red-400 text-xs mt-1.5">Please select a type to continue.</p>}
+                    </div>
+
+                    {/* Title */}
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 mb-1.5 block">Listing title</label>
+                      <input
+                        type="text"
+                        value={listingTitle}
+                        onChange={(e) => setListingTitle(e.target.value)}
+                        placeholder="e.g. Cozy furnished single near Southside"
+                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-black/10"
+                      />
                     </div>
 
                     {/* Location */}

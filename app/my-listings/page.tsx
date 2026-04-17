@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 type Listing = {
   id: number;
+  title: string | null;
   type: string;
   address: string;
   price: number;
@@ -109,10 +110,13 @@ function ViewModal({ listing, onClose, onEdit }: {
 
         {/* Content */}
         <div className="px-6 py-5">
-          <div className="flex items-start justify-between gap-2 mb-1">
-            <h2 className="text-lg font-bold text-gray-950 leading-snug">{listing.address}</h2>
+          <div className="flex items-start justify-between gap-2 mb-0.5">
+            <h2 className="text-lg font-bold text-gray-950 leading-snug">{listing.title ?? listing.address}</h2>
             <span className="text-lg font-bold text-gray-950 flex-shrink-0">${listing.price.toLocaleString()}<span className="text-sm font-normal text-gray-400">/mo</span></span>
           </div>
+          {listing.title && (
+            <p className="text-xs text-gray-400 mb-1">{listing.address}</p>
+          )}
 
           <p className="text-sm text-gray-400 mb-4">
             Available {formatDate(listing.available_from)}{listing.available_to ? ` – ${formatDate(listing.available_to)}` : ""}
@@ -146,6 +150,7 @@ function EditModal({ listing, onClose, onSave }: {
   onClose: () => void;
   onSave: (updated: Listing) => void;
 }) {
+  const [title, setTitle] = useState(listing.title ?? "");
   const [type, setType] = useState(listing.type);
   const [address, setAddress] = useState(listing.address);
   const [price, setPrice] = useState(String(listing.price));
@@ -183,6 +188,7 @@ function EditModal({ listing, onClose, onSave }: {
   const handleSave = async () => {
     setSaving(true);
     const updates = {
+      title: title.trim() || null,
       type,
       address,
       price: Number(price),
@@ -237,6 +243,14 @@ function EditModal({ listing, onClose, onSave }: {
               <span className="text-xs text-gray-400">{uploadingPhoto ? "Uploading..." : "+ Add photos"}</span>
               <input ref={photoInputRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => handlePhotoUpload(e.target.files)} />
             </label>
+          </div>
+
+          {/* Title */}
+          <div>
+            <label className="text-xs font-medium text-gray-500 mb-1.5 block">Listing title</label>
+            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g. Cozy furnished single near campus"
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-black/10" />
           </div>
 
           {/* Type */}
@@ -425,8 +439,8 @@ export default function MyListings() {
                     <div>
                       <div className="flex items-start justify-between gap-2">
                         <button onClick={() => setViewingListing(listing)} className="text-left hover:underline cursor-pointer">
-                          <p className="text-sm font-semibold text-gray-900 leading-snug">{listing.address}</p>
-                          <p className="text-xs text-gray-400 mt-0.5 capitalize">{listing.type}</p>
+                          <p className="text-sm font-semibold text-gray-900 leading-snug">{listing.title ?? listing.address}</p>
+                          <p className="text-xs text-gray-400 mt-0.5">{listing.title ? listing.address : listing.type}</p>
                         </button>
                         <span className="text-sm font-bold text-gray-900 flex-shrink-0">${listing.price.toLocaleString()}/mo</span>
                       </div>

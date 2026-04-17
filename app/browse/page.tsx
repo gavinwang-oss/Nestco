@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 type Listing = {
   id: number;
+  title: string | null;
   type: string;
   address: string;
   price: number;
@@ -1668,9 +1669,12 @@ function BrowseContent() {
                               </div>
                               <div className="p-3.5">
                                 <p className="text-[10px] text-gray-400 mb-1">{formatType(listing.type)}</p>
-                                <h3 className="font-semibold text-gray-900 text-sm leading-tight mb-2 line-clamp-1">
-                                  {listing.address}
+                                <h3 className="font-semibold text-gray-900 text-sm leading-tight mb-0.5 line-clamp-1">
+                                  {listing.title ?? listing.address}
                                 </h3>
+                                {listing.title && (
+                                  <p className="text-[10px] text-gray-400 mb-1.5 line-clamp-1">{listing.address}</p>
+                                )}
                                 <div className="flex items-center justify-between">
                                   <p className="text-sm font-bold text-gray-900">
                                     ${listing.price.toLocaleString()}
