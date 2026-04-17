@@ -2,6 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 
+function parsePendingPhotos(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.filter((url): url is string => typeof url === "string");
+  }
+  if (typeof value !== "string" || !value.trim()) return [];
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    return Array.isArray(parsed)
+      ? parsed.filter((url): url is string => typeof url === "string")
+      : [];
+  } catch {
+    return [];
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const authHeader = req.headers.get("Authorization");
@@ -25,10 +40,12 @@ export async function POST(req: NextRequest) {
     );
 
     // Look up the most recent pending listing for this email
+    const email = user.email.toLowerCase();
+
     const { data: pending, error: fetchError } = await serviceClient
       .from("pending_listings")
       .select("*")
-      .eq("email", user.email)
+      .eq("email", email)
       .eq("status", "pending")
       .order("created_at", { ascending: false })
       .limit(1)
@@ -37,6 +54,10 @@ export async function POST(req: NextRequest) {
     if (fetchError || !pending) {
       return NextResponse.json({ error: "No pending listing found." }, { status: 404 });
     }
+
+    const parsedPhotos = parsePendingPhotos(pending.photos);
+    console.log("[activate] pending.photos raw:", pending.photos);
+    console.log("[activate] parsedPhotos:", parsedPhotos);
 
     // Insert into listings table
     const { data: newListing, error: insertError } = await serviceClient
@@ -56,6 +77,7 @@ export async function POST(req: NextRequest) {
         gender_preference: pending.gender_preference ?? "any",
         num_roommates: 0,
         smokers: false,
+        photos: parsedPhotos.length > 0 ? parsedPhotos : null,
       }])
       .select("id")
       .single();
