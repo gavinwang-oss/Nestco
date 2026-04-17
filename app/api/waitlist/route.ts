@@ -92,7 +92,15 @@ export async function POST(req: NextRequest) {
     }
 
     const waitlistId = String(body.waitlist_id);
-    const { data, error } = await supabase
+
+    // Use service client to bypass RLS (Waitlist table only allows anon INSERT)
+    const serviceClient = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
+
+    const { data, error } = await serviceClient
       .from("Waitlist")
       .update({
         intent: cleanString(body.intent, 20),
@@ -118,12 +126,6 @@ export async function POST(req: NextRequest) {
     // If intent is "list", also save to pending_listings and send magic link
     const intent = cleanString(body.intent, 20);
     if (intent === "list") {
-      const serviceClient = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        { auth: { autoRefreshToken: false, persistSession: false } }
-      );
-
       const listingType = cleanString(body.listing_type, 80);
       const address = cleanString(body.location, 200);
       const price = cleanInt(body.price);
