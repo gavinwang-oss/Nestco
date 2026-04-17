@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
+import RouteGuard from "@/components/RouteGuard";
 
 export const metadata: Metadata = {
   title: "Nestco — Student Subletting at UC Berkeley",
@@ -15,7 +16,9 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full antialiased">
       <body className="min-h-full flex flex-col">
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <RouteGuard>{children}</RouteGuard>
+        </AuthProvider>
       </body>
     </html>
   );

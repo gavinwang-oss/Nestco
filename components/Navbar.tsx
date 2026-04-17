@@ -5,11 +5,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthModal, { AuthTab } from "@/components/AuthModal";
+import { isAdminEmail } from "@/lib/admin";
 
 export default function Navbar() {
   const { user, loading, signOut } = useAuth();
   const [authOpen, setAuthOpen] = useState(false);
   const [authTab, setAuthTab] = useState<AuthTab>("login");
+  const isAdmin = isAdminEmail(user?.email);
   const pathname = usePathname();
 
   const openAuth = (tab: AuthTab) => {
@@ -50,27 +52,29 @@ export default function Navbar() {
           <div className="flex items-center gap-0.5">
             {user ? (
               <>
-                {navLink("/browse", "Browse")}
-                {navLink("/requests", "Requests")}
+                {isAdmin && navLink("/browse", "Browse")}
+                {isAdmin && navLink("/requests", "Requests")}
                 {navLink("/my-listings", "My listings")}
-                {navLink("/saved", "Saved")}
-                {navLink("/inbox", "Inbox")}
+                {isAdmin && navLink("/saved", "Saved")}
+                {isAdmin && navLink("/inbox", "Inbox")}
 
                 {/* Divider */}
                 <div className="w-px h-4 bg-black/[0.08] mx-2" />
 
-                {/* Avatar → Profile */}
-                <Link
-                  href="/profile"
-                  title="Profile"
-                  className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-all ${
-                    pathname === "/profile"
-                      ? "bg-gray-900 text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
-                >
-                  {initials}
-                </Link>
+                {/* Avatar → Profile (admin only) */}
+                {isAdmin && (
+                  <Link
+                    href="/profile"
+                    title="Profile"
+                    className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-all ${
+                      pathname === "/profile"
+                        ? "bg-gray-900 text-white"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                  >
+                    {initials}
+                  </Link>
+                )}
 
                 {/* Sign out */}
                 <button
@@ -82,20 +86,12 @@ export default function Navbar() {
               </>
             ) : (
               <>
-                {navLink("/requests", "Requests")}
-                <div className="w-px h-4 bg-black/[0.08] mx-2" />
-                <button
-                  onClick={() => openAuth("login")}
-                  className="px-3 py-1.5 text-sm text-gray-500 hover:text-gray-900 hover:bg-black/[0.04] rounded-lg transition-all cursor-pointer"
+                <a
+                  href="mailto:support@nestco.ai"
+                  className="px-3 py-1.5 text-sm text-gray-400 hover:text-gray-700 rounded-lg hover:bg-black/[0.04] transition-all"
                 >
-                  Log in
-                </button>
-                <button
-                  onClick={() => openAuth("signup")}
-                  className="ml-1 px-4 py-1.5 bg-black text-white text-sm font-medium rounded-full hover:bg-gray-800 transition-colors cursor-pointer"
-                >
-                  Sign up
-                </button>
+                  Support
+                </a>
               </>
             )}
           </div>

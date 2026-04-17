@@ -183,11 +183,16 @@ export default function Home() {
     formData.append("parking", String(parking));
     formData.append("gender_preference", genderPreference);
     photos.forEach((file) => formData.append("photos", file));
-    await fetch("/api/waitlist", {
+    const res = await fetch("/api/waitlist", {
       method: "POST",
       body: formData,
     });
+    const data = await res.json();
     setDetailsLoading(false);
+    if (!res.ok) {
+      setEmailError(data.error ?? "Something went wrong.");
+      return;
+    }
     setDetailsSubmitted(true);
   };
 
@@ -530,6 +535,8 @@ export default function Home() {
                       </label>
                     </div>
 
+                    {emailError && <p className="text-red-500 text-xs">{emailError}</p>}
+
                     <div className="flex gap-3 mt-1">
                       <button
                         type="submit"
@@ -582,6 +589,16 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {/* Footer */}
+      <div className="relative z-10 text-center py-8">
+        <p className="text-xs text-gray-400">
+          Questions?{" "}
+          <a href="mailto:support@nestco.ai" className="underline hover:text-gray-600 transition-colors">
+            support@nestco.ai
+          </a>
+        </p>
+      </div>
     </div>
   );
 }
