@@ -71,13 +71,13 @@ function ViewModal({ listing, onClose, onEdit }: {
   const hasPhotos = listing.photos?.length > 0;
   const GRADIENTS_LOCAL = ["from-amber-100 to-orange-200","from-blue-100 to-indigo-200","from-pink-100 to-rose-200","from-green-100 to-emerald-200","from-violet-100 to-purple-200","from-sky-100 to-cyan-200"];
 
-  const chips = [
-    listing.furnished && "Furnished",
-    listing.utilities_included && "Utilities included",
-    listing.pets && "Pets ok",
-    listing.parking && "Parking",
-    listing.gender_preference !== "any" && (listing.gender_preference === "female" ? "Female only" : "Male only"),
-  ].filter(Boolean) as string[];
+  const details = [
+    { label: "Furnished", value: listing.furnished ? "Yes" : "No" },
+    { label: "Utilities included", value: listing.utilities_included ? "Yes" : "No" },
+    { label: "Pets ok", value: listing.pets ? "Yes" : "No" },
+    { label: "Parking", value: listing.parking ? "Yes" : "No" },
+    { label: "Gender preference", value: listing.gender_preference === "female" ? "Female only" : listing.gender_preference === "male" ? "Male only" : "Any" },
+  ];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.4)" }} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
@@ -118,13 +118,14 @@ function ViewModal({ listing, onClose, onEdit }: {
             Available {formatDate(listing.available_from)}{listing.available_to ? ` – ${formatDate(listing.available_to)}` : ""}
           </p>
 
-          {chips.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-4">
-              {chips.map((chip) => (
-                <span key={chip} className="px-3 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-600">{chip}</span>
-              ))}
-            </div>
-          )}
+          <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 mb-4 p-4 bg-gray-50 rounded-2xl">
+            {details.map(({ label, value }) => (
+              <div key={label}>
+                <p className="text-[10px] text-gray-400 uppercase tracking-wide font-medium">{label}</p>
+                <p className="text-sm font-medium text-gray-900 mt-0.5">{value}</p>
+              </div>
+            ))}
+          </div>
 
           {listing.description && (
             <p className="text-sm text-gray-600 leading-relaxed mb-5">{listing.description}</p>
@@ -158,7 +159,6 @@ function EditModal({ listing, onClose, onSave }: {
   const [genderPreference, setGenderPreference] = useState(listing.gender_preference ?? "any");
   const [photos, setPhotos] = useState<string[]>(listing.photos ?? []);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
@@ -199,9 +199,8 @@ function EditModal({ listing, onClose, onSave }: {
     const { error } = await supabase.from("listings").update(updates).eq("id", listing.id);
     setSaving(false);
     if (!error) {
-      setSaved(true);
       onSave({ ...listing, ...updates });
-      setTimeout(() => setSaved(false), 2000);
+      onClose();
     }
   };
 
@@ -311,8 +310,8 @@ function EditModal({ listing, onClose, onSave }: {
 
           {/* Save */}
           <button onClick={handleSave} disabled={saving}
-            className={`w-full py-3 rounded-full text-sm font-semibold transition-all cursor-pointer ${saved ? "bg-green-600 text-white" : "bg-black text-white hover:bg-gray-800"} disabled:opacity-60`}>
-            {saved ? "Saved!" : saving ? "Saving..." : "Save changes"}
+            className="w-full py-3 rounded-full text-sm font-semibold transition-all cursor-pointer bg-black text-white hover:bg-gray-800 disabled:opacity-60">
+            {saving ? "Saving..." : "Save changes"}
           </button>
         </div>
       </div>
