@@ -62,6 +62,84 @@ function PillToggle({ value, onChange }: { value: boolean; onChange: (v: boolean
   );
 }
 
+function ViewModal({ listing, onClose, onEdit }: {
+  listing: Listing;
+  onClose: () => void;
+  onEdit: () => void;
+}) {
+  const [photoIndex, setPhotoIndex] = useState(0);
+  const hasPhotos = listing.photos?.length > 0;
+  const GRADIENTS_LOCAL = ["from-amber-100 to-orange-200","from-blue-100 to-indigo-200","from-pink-100 to-rose-200","from-green-100 to-emerald-200","from-violet-100 to-purple-200","from-sky-100 to-cyan-200"];
+
+  const chips = [
+    listing.furnished && "Furnished",
+    listing.utilities_included && "Utilities included",
+    listing.pets && "Pets ok",
+    listing.parking && "Parking",
+    listing.gender_preference !== "any" && (listing.gender_preference === "female" ? "Female only" : "Male only"),
+  ].filter(Boolean) as string[];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.4)" }} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="bg-white rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
+        {/* Photo */}
+        <div className={`relative h-56 ${hasPhotos ? "" : `bg-gradient-to-br ${GRADIENTS_LOCAL[listing.id % GRADIENTS_LOCAL.length]}`} rounded-t-3xl overflow-hidden`}>
+          {hasPhotos && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={listing.photos[photoIndex]} alt={listing.address} className="w-full h-full object-cover" />
+          )}
+          <div className="absolute top-3 left-3 px-2.5 py-1 bg-black/70 backdrop-blur-sm rounded-full text-white text-xs font-medium">
+            {listing.type}
+          </div>
+          <button onClick={onClose} className="absolute top-3 right-3 w-7 h-7 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center cursor-pointer">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 1l10 10M11 1L1 11" stroke="white" strokeWidth="1.8" strokeLinecap="round"/></svg>
+          </button>
+          {hasPhotos && listing.photos.length > 1 && (
+            <>
+              <button onClick={() => setPhotoIndex((i) => Math.max(0, i - 1))} className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 bg-black/40 rounded-full flex items-center justify-center cursor-pointer">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8 10L4 6l4-4" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </button>
+              <button onClick={() => setPhotoIndex((i) => Math.min(listing.photos.length - 1, i + 1))} className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 bg-black/40 rounded-full flex items-center justify-center cursor-pointer">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 10l4-4-4-4" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </button>
+              <div className="absolute bottom-2 right-3 px-2 py-0.5 bg-black/50 rounded-full text-white text-[10px]">{photoIndex + 1} / {listing.photos.length}</div>
+            </>
+          )}
+        </div>
+
+        {/* Content */}
+        <div className="px-6 py-5">
+          <div className="flex items-start justify-between gap-2 mb-1">
+            <h2 className="text-lg font-bold text-gray-950 leading-snug">{listing.address}</h2>
+            <span className="text-lg font-bold text-gray-950 flex-shrink-0">${listing.price.toLocaleString()}<span className="text-sm font-normal text-gray-400">/mo</span></span>
+          </div>
+
+          <p className="text-sm text-gray-400 mb-4">
+            Available {formatDate(listing.available_from)}{listing.available_to ? ` – ${formatDate(listing.available_to)}` : ""}
+          </p>
+
+          {chips.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {chips.map((chip) => (
+                <span key={chip} className="px-3 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-600">{chip}</span>
+              ))}
+            </div>
+          )}
+
+          {listing.description && (
+            <p className="text-sm text-gray-600 leading-relaxed mb-5">{listing.description}</p>
+          )}
+
+          <button onClick={() => { onClose(); onEdit(); }}
+            className="w-full py-3 bg-black text-white text-sm font-semibold rounded-full hover:bg-gray-800 transition-colors cursor-pointer">
+            Edit listing
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function EditModal({ listing, onClose, onSave }: {
   listing: Listing;
   onClose: () => void;
@@ -248,6 +326,7 @@ export default function MyListings() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [fetching, setFetching] = useState(true);
   const [editingListing, setEditingListing] = useState<Listing | null>(null);
+  const [viewingListing, setViewingListing] = useState<Listing | null>(null);
 
   useEffect(() => {
     if (loading) return;
@@ -289,11 +368,21 @@ export default function MyListings() {
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: "#f5f4f0", backgroundImage: `linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px)`, backgroundSize: "42px 42px" }}>
       <Navbar />
 
+      {viewingListing && (
+        <ViewModal
+          listing={viewingListing}
+          onClose={() => setViewingListing(null)}
+          onEdit={() => setEditingListing(viewingListing)}
+        />
+      )}
       {editingListing && (
         <EditModal
           listing={editingListing}
           onClose={() => setEditingListing(null)}
-          onSave={(updated) => setListings((prev) => prev.map((l) => l.id === updated.id ? updated : l))}
+          onSave={(updated) => {
+            setListings((prev) => prev.map((l) => l.id === updated.id ? updated : l));
+            setViewingListing(null);
+          }}
         />
       )}
 
@@ -324,7 +413,7 @@ export default function MyListings() {
               const hasPhoto = listing.photos && listing.photos.length > 0;
               return (
                 <div key={listing.id} className="bg-white rounded-2xl border border-black/[0.06] shadow-sm overflow-hidden flex">
-                  <button onClick={() => setEditingListing(listing)} className="w-36 flex-shrink-0 cursor-pointer">
+                  <button onClick={() => setViewingListing(listing)} className="w-36 flex-shrink-0 cursor-pointer">
                     {hasPhoto ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={listing.photos[0]} alt={listing.address} className="w-full h-full object-cover" />
@@ -336,7 +425,7 @@ export default function MyListings() {
                   <div className="flex-1 p-5 flex flex-col justify-between">
                     <div>
                       <div className="flex items-start justify-between gap-2">
-                        <button onClick={() => setEditingListing(listing)} className="text-left hover:underline cursor-pointer">
+                        <button onClick={() => setViewingListing(listing)} className="text-left hover:underline cursor-pointer">
                           <p className="text-sm font-semibold text-gray-900 leading-snug">{listing.address}</p>
                           <p className="text-xs text-gray-400 mt-0.5 capitalize">{listing.type}</p>
                         </button>
@@ -351,6 +440,10 @@ export default function MyListings() {
                     <div className="flex items-center justify-between mt-4">
                       <span className="text-xs text-gray-300">Listed {formatDate(listing.created_at)}</span>
                       <div className="flex gap-2">
+                        <button onClick={() => setViewingListing(listing)}
+                          className="px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-full hover:bg-gray-50 transition-colors cursor-pointer">
+                          View
+                        </button>
                         <button onClick={() => setEditingListing(listing)}
                           className="px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-full hover:bg-gray-50 transition-colors cursor-pointer">
                           Edit
