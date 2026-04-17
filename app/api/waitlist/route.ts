@@ -79,7 +79,18 @@ export async function POST(req: NextRequest) {
 
       if (error) {
         if (error.code === "23505") {
-          return NextResponse.json({ error: "This email is already on the waitlist." }, { status: 409 });
+          // Email already exists — look up existing ID so the lister form can still proceed
+          const sc = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY!,
+            { auth: { autoRefreshToken: false, persistSession: false } }
+          );
+          const { data: existing } = await sc
+            .from("Waitlist")
+            .select("id")
+            .eq("email", email)
+            .single();
+          return NextResponse.json({ success: true, waitlist_id: existing?.id ?? null }, { status: 200 });
         }
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
@@ -169,13 +180,13 @@ export async function POST(req: NextRequest) {
           pets,
           parking,
           gender_preference: genderPreference,
-          photos: photoUrls.length > 0 ? photoUrls : null,
+          photos: photoUrls.length > 0 ? JSON.stringify(photoUrls) : null,
           status: "pending",
         }]);
 
       if (plError) {
         console.error("Failed to insert pending_listing:", plError.message);
-        // Non-fatal — don't block the response
+        return NextResponse.json({ error: "Failed to save your listing details." }, { status: 500 });
       }
 
       // Send magic link via anon client
