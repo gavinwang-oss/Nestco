@@ -185,17 +185,22 @@ export default function Home() {
     formData.append("parking", String(parking));
     formData.append("gender_preference", genderPreference);
     photos.forEach((file) => formData.append("photos", file));
-    const res = await fetch("/api/waitlist", {
-      method: "POST",
-      body: formData,
-    });
-    const data = await res.json();
-    setDetailsLoading(false);
-    if (!res.ok) {
-      setEmailError(data.error ?? "Something went wrong.");
-      return;
+    try {
+      const res = await fetch("/api/waitlist", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setEmailError(data.error ?? "Something went wrong.");
+        return;
+      }
+      setDetailsSubmitted(true);
+    } catch {
+      setEmailError("Something went wrong. Please check your connection and try again.");
+    } finally {
+      setDetailsLoading(false);
     }
-    setDetailsSubmitted(true);
   };
 
   return (
