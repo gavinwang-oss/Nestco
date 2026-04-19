@@ -11,29 +11,28 @@ function AuthCallbackInner() {
   useEffect(() => {
     const next = searchParams.get("next") ?? "/browse";
     const code = searchParams.get("code");
-    const hasMagicLinkParams =
-      Boolean(code) ||
-      window.location.hash.includes("access_token") ||
-      searchParams.has("token_hash");
 
+    // Handle PKCE code exchange flow
     if (code) {
       supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
         if (!error) router.replace(next);
       });
+      return;
     }
 
-    if (!hasMagicLinkParams) {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session) {
-          router.replace(next);
-        }
-      });
-    }
-
+    // For magic link (hash) flow: Supabase processes the hash on client init and
+    // fires SIGNED_IN immediately — often before useEffect registers the listener.
+    // So we listen AND check getSession() in parallel to avoid getting stuck.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session) {
         router.replace(next);
       }
+    });
+
+    // Fallback: session may already exist if the SIGNED_IN event fired before
+    // the listener above was registered.
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) router.replace(next);
     });
 
     return () => subscription.unsubscribe();
