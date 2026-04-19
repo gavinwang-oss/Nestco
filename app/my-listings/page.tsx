@@ -233,13 +233,34 @@ function EditModal({ listing, onClose, onSave }: {
             {photos.length > 0 && (
               <div className="flex gap-2 flex-wrap mb-2">
                 {photos.map((url, i) => (
-                  <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden border border-gray-200">
+                  <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden border border-gray-200 group">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={url} alt="" className="w-full h-full object-cover" />
+                    {i === 0 && (
+                      <span className="absolute bottom-1 left-1 px-1.5 py-0.5 bg-black/60 rounded text-white text-[9px] font-medium leading-none">Cover</span>
+                    )}
+                    {/* Delete */}
                     <button type="button" onClick={() => setPhotos((prev) => prev.filter((_, idx) => idx !== i))}
                       className="absolute top-1 right-1 w-5 h-5 bg-black/60 rounded-full flex items-center justify-center cursor-pointer">
                       <svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1.5 1.5l5 5M6.5 1.5l-5 5" stroke="white" strokeWidth="1.5" strokeLinecap="round"/></svg>
                     </button>
+                    {/* Reorder arrows */}
+                    <div className="absolute bottom-1 right-1 flex gap-0.5">
+                      {i > 0 && (
+                        <button type="button"
+                          onClick={() => setPhotos((prev) => { const a = [...prev]; [a[i-1], a[i]] = [a[i], a[i-1]]; return a; })}
+                          className="w-5 h-5 bg-black/60 rounded flex items-center justify-center cursor-pointer">
+                          <svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M5 1.5L2 4l3 2.5" stroke="white" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        </button>
+                      )}
+                      {i < photos.length - 1 && (
+                        <button type="button"
+                          onClick={() => setPhotos((prev) => { const a = [...prev]; [a[i], a[i+1]] = [a[i+1], a[i]]; return a; })}
+                          className="w-5 h-5 bg-black/60 rounded flex items-center justify-center cursor-pointer">
+                          <svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M3 1.5L6 4 3 6.5" stroke="white" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

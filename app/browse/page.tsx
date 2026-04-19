@@ -723,6 +723,8 @@ function BrowseContent() {
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [messageDraft, setMessageDraft] = useState<string | undefined>(undefined);
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
+  const [profileLoaded, setProfileLoaded] = useState(false);
+  const [profileBannerDismissed, setProfileBannerDismissed] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [lastDraft, setLastDraft] = useState<{ content: string; listingId: number } | null>(null);
   const [editingDraftKey, setEditingDraftKey] = useState<string | null>(null);
@@ -762,7 +764,10 @@ function BrowseContent() {
   useEffect(() => {
     if (!user) return;
     supabase.from("profiles").select("*").eq("user_id", user.id).single()
-      .then(({ data }) => { if (data) setUserProfile(data as Profile); });
+      .then(({ data }) => {
+        if (data) setUserProfile(data as Profile);
+        setProfileLoaded(true);
+      });
   }, [user]);
 
   // Fetch user's saved listings
@@ -1637,6 +1642,36 @@ function BrowseContent() {
                     transition={{ duration: 0.2, ease: "easeOut" }}
                     className="absolute inset-0 overflow-y-auto p-3 sm:p-6 pb-20 sm:pb-6"
                   >
+                    {/* Profile completion banner */}
+                    {profileLoaded && user && !profileBannerDismissed &&
+                      (!userProfile || !["name", "age", "major", "year_in_school", "gender"].every(
+                        (f) => (userProfile as Record<string, string>)[f]?.trim()
+                      )) && (
+                      <div className="flex items-center justify-between gap-3 mb-4 px-4 py-3 bg-black/[0.04] rounded-2xl">
+                        <p className="text-sm text-gray-700">
+                          <span className="font-medium">Complete your profile</span>
+                          <span className="text-gray-500"> — AI-drafted intros will include your year and major</span>
+                        </p>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            onClick={() => setShowProfileModal(true)}
+                            className="text-sm font-semibold text-gray-900 hover:underline cursor-pointer"
+                          >
+                            Complete →
+                          </button>
+                          <button
+                            onClick={() => setProfileBannerDismissed(true)}
+                            className="w-5 h-5 flex items-center justify-center rounded-full hover:bg-black/10 transition-colors cursor-pointer"
+                            aria-label="Dismiss"
+                          >
+                            <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+                              <path d="M1.5 1.5l5 5M6.5 1.5l-5 5" stroke="#6b7280" strokeWidth="1.5" strokeLinecap="round"/>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="mb-5">
                       <p className="text-sm text-gray-500">
                         <span className="font-semibold text-gray-900">

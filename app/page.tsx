@@ -537,20 +537,43 @@ export default function Home() {
                             <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-gray-200">
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img src={src} alt="" className="w-full h-full object-cover" />
+                              {i === 0 && (
+                                <span className="absolute bottom-0.5 left-0.5 px-1 py-0.5 bg-black/60 rounded text-white text-[8px] font-medium leading-none">Cover</span>
+                              )}
+                              {/* Delete */}
                               <button
                                 type="button"
                                 onClick={() => {
-                                  const newPhotos = photos.filter((_, idx) => idx !== i);
-                                  const newPreviews = photoPreviews.filter((_, idx) => idx !== i);
-                                  setPhotos(newPhotos);
-                                  setPhotoPreviews(newPreviews);
+                                  setPhotos(photos.filter((_, idx) => idx !== i));
+                                  setPhotoPreviews(photoPreviews.filter((_, idx) => idx !== i));
                                 }}
                                 className="absolute top-0.5 right-0.5 w-4 h-4 bg-black/60 rounded-full flex items-center justify-center cursor-pointer"
                               >
-                                <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
-                                  <path d="M1.5 1.5l5 5M6.5 1.5l-5 5" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
-                                </svg>
+                                <svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1.5 1.5l5 5M6.5 1.5l-5 5" stroke="white" strokeWidth="1.5" strokeLinecap="round" /></svg>
                               </button>
+                              {/* Reorder arrows */}
+                              <div className="absolute bottom-0.5 right-0.5 flex gap-0.5">
+                                {i > 0 && (
+                                  <button type="button"
+                                    onClick={() => {
+                                      const p = [...photos]; [p[i-1], p[i]] = [p[i], p[i-1]]; setPhotos(p);
+                                      const v = [...photoPreviews]; [v[i-1], v[i]] = [v[i], v[i-1]]; setPhotoPreviews(v);
+                                    }}
+                                    className="w-4 h-4 bg-black/60 rounded flex items-center justify-center cursor-pointer">
+                                    <svg width="6" height="6" viewBox="0 0 8 8" fill="none"><path d="M5 1.5L2 4l3 2.5" stroke="white" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                  </button>
+                                )}
+                                {i < photoPreviews.length - 1 && (
+                                  <button type="button"
+                                    onClick={() => {
+                                      const p = [...photos]; [p[i], p[i+1]] = [p[i+1], p[i]]; setPhotos(p);
+                                      const v = [...photoPreviews]; [v[i], v[i+1]] = [v[i+1], v[i]]; setPhotoPreviews(v);
+                                    }}
+                                    className="w-4 h-4 bg-black/60 rounded flex items-center justify-center cursor-pointer">
+                                    <svg width="6" height="6" viewBox="0 0 8 8" fill="none"><path d="M3 1.5L6 4 3 6.5" stroke="white" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           ))}
                         </div>
