@@ -214,6 +214,14 @@ export default function Home() {
     >
       {/* Hero section */}
       <div className="relative min-h-screen overflow-hidden flex items-center justify-center">
+        <div className="absolute top-4 right-4 z-20">
+          <a
+            href="/login"
+            className="px-3 py-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
+          >
+            Log in
+          </a>
+        </div>
 
         {/* Floating cards — desktop only */}
         <div className="hidden lg:block">
