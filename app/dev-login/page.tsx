@@ -7,7 +7,11 @@ const DEV_EMAILS = [
   "gavin_wang@berkeley.edu",
 ];
 
+// This page is intentionally local-only. In production the API returns 404.
 export default function DevLoginPage() {
+  if (process.env.NODE_ENV === "production") {
+    return null;
+  }
   const [loading, setLoading] = useState<string | null>(null);
   const [link, setLink] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);

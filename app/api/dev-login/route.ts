@@ -6,8 +6,12 @@ import { NextRequest, NextResponse } from "next/server";
 const DEV_EMAILS = ["developer@nestco.edu", "gavin_wang@berkeley.edu"];
 
 // Generates a magic link for a test account without sending an email.
-// Only works for the explicitly whitelisted dev emails above.
+// Only works locally (NODE_ENV === 'development') for whitelisted dev emails.
 export async function POST(req: NextRequest) {
+  if (process.env.NODE_ENV !== "development") {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
   const { email } = await req.json();
 
   if (!email || !DEV_EMAILS.includes(email.toLowerCase())) {
