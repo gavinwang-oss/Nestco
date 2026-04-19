@@ -27,9 +27,10 @@ Nestco is a UC Berkeley student sublet marketplace. Students can browse listings
 | `/inbox` | `app/inbox/page.tsx` | Two-panel DM interface — conversation list left, thread right. Includes match mechanic. |
 | `/requests` | `app/requests/page.tsx` | Browse and post housing requests |
 | `/profile` | `app/profile/page.tsx` | Edit profile (name, age, major, year, gender, bio, avatar) |
-| `/my-listings` | `app/my-listings/page.tsx` | Manage your own listings (delete only, no edit yet) |
+| `/my-listings` | `app/my-listings/page.tsx` | Manage your own listings — view, edit (full field + photo CRUD via EditModal), delete |
 | `/saved` | `app/saved/page.tsx` | Saved/bookmarked listings |
 | `/tos` | `app/tos/page.tsx` | Terms of Service page |
+| `/login` | `app/login/page.tsx` | Standalone magic link login page — sends OTP via `signInWithOtp` with `shouldCreateUser: false`. For existing users only (including magic-link-only listers who have no password). |
 | `/activate` | `app/activate/page.tsx` | Magic link landing page — creates listing from pending_listings on auth |
 | `/auth/callback` | `app/auth/callback/page.tsx` | Auth callback — reads `?next=` param and redirects after SIGNED_IN. Uses both `onAuthStateChange` and `getSession()` fallback. |
 
@@ -38,6 +39,8 @@ Nestco is a UC Berkeley student sublet marketplace. Students can browse listings
 - `app/api/match-requests/route.ts` — Called after a new listing is created. Requires Bearer token + ownership check. Scores all active requests against the listing using Claude and inserts into `notifications` table.
 - `app/api/waitlist/route.ts` — Two-step flow. Step 1: insert email → returns `waitlist_id`. Step 2: accepts FormData (not JSON) with listing details + photo files. Uploads photos to `listing-photos/pending/` in Supabase Storage, saves to `pending_listings`, sends magic link via `signInWithOtp` with `emailRedirectTo: NEXT_PUBLIC_APP_URL + "/auth/callback?next=/activate"`.
 - `app/api/activate-listing/route.ts` — Called from `/activate` with Bearer token. Finds pending listing by email, creates real listing in `listings` table, deletes from `pending_listings`.
+- `app/api/notify/message/route.ts` — Sends a "new message" email notification via Resend. Requires Bearer token. Looks up recipient email via service role, skips if sender === recipient. Fire-and-forget from the browse page when a message is sent.
+- `app/api/notify/match/route.ts` — Sends "you matched!" email to both lister and renter via Resend when `matched_at` is set. Requires Bearer token. Sends role-specific copy to each party in parallel.
 
 ## Database tables (Supabase)
 
@@ -133,13 +136,15 @@ Conversations are grouped by `${listing_id}__${other_user_id}` from the current 
 ### match-requests security
 The `/api/match-requests` endpoint verifies the Bearer token, fetches the listing, and checks `listing.user_id === user.id` before proceeding. Returns 401/403 otherwise.
 
+## Navbar / access model
+- Most nav links (Browse, Requests, Saved, Inbox, Profile) are gated behind `isAdmin` in `Navbar.tsx`. Regular logged-in users only see "My listings". This is a pre-launch gate — not intended to be permanent.
+- There is no "Log in" button in the Navbar for unauthenticated users — they see only a "Support" email link. Users must navigate directly to `/login` to sign in. The `AuthModal` component is imported in `Navbar` but never triggered by any button for non-logged-in visitors.
+- `AuthModal` (password-based) still exists and is rendered by `Navbar`, but has no trigger. The primary login path for all users — including password-account users — is `/login` (magic link).
+
 ## Things NOT yet built
-- Email notifications (new message, new match)
-- Edit listing (only delete exists in my-listings)
-- Mobile layout
 - TOS acceptance checkbox on signup
 - Listing expiry / auto-deactivation
 - Referral/ambassador tracking links
 - Full Supabase migrations for all tables, storage buckets, RLS policies, and indexes
 - Confirmation email after waitlist signup (users only see on-screen confirmation)
-- Magic link login option on the main login page (users who signed up via magic link have no password — they need a way to log back in)
+- Removing the isAdmin gate from the Navbar so regular users can access Browse, Requests, Saved, Inbox, and Profile

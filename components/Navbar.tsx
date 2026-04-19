@@ -114,6 +114,12 @@ export default function Navbar() {
                 >
                   Support
                 </a>
+                <Link
+                  href="/login"
+                  className="px-3 py-1.5 text-sm font-medium text-gray-900 bg-black/[0.06] hover:bg-black/[0.1] rounded-lg transition-all"
+                >
+                  Log in
+                </Link>
               </>
             )}
           </div>
@@ -163,12 +169,12 @@ export default function Navbar() {
                 </button>
               </>
             ) : (
-              <a
-                href="mailto:support@nestco.ai"
-                className="px-3 py-1.5 text-sm text-gray-400 hover:text-gray-700 rounded-lg hover:bg-black/[0.04] transition-all"
+              <Link
+                href="/login"
+                className="px-3 py-1.5 text-sm font-medium text-gray-900 bg-black/[0.06] hover:bg-black/[0.1] rounded-lg transition-all"
               >
-                Support
-              </a>
+                Log in
+              </Link>
             )}
           </div>
         )}
