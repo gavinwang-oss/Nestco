@@ -128,8 +128,8 @@ export default function TermsOfServicePage() {
             <h2 className="text-base font-semibold text-gray-900 mb-2">14. Contact</h2>
             <p>
               Questions about these Terms? Reach us at{" "}
-              <a href="mailto:hello@nestco.app" className="text-black underline underline-offset-2">
-                hello@nestco.app
+              <a href="mailto:support@nestco.ai" className="text-black underline underline-offset-2">
+                support@nestco.ai
               </a>
               .
             </p>
