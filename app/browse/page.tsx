@@ -748,6 +748,7 @@ function BrowseContent() {
     supabase
       .from("listings")
       .select("*")
+      .or(`available_to.is.null,available_to.gte.${new Date().toISOString().slice(0, 10)}`)
       .order("created_at", { ascending: false })
       .then(({ data }) => {
         if (data) {

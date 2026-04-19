@@ -106,6 +106,7 @@ export default function Home() {
   const [emailError, setEmailError] = useState("");
   const [emailLoading, setEmailLoading] = useState(false);
   const [waitlistId, setWaitlistId] = useState<string | number | null>(null);
+  const [tosAccepted, setTosAccepted] = useState(false);
 
   // Step 2 state
   const [intent, setIntent] = useState<"find" | "list" | null>(null);
@@ -271,22 +272,38 @@ export default function Home() {
           <p className="text-gray-400 text-sm mb-8">Launching soon. Join the waitlist.</p>
 
           {!emailSubmitted ? (
-            <form onSubmit={handleEmailSubmit} className="flex flex-col sm:flex-row gap-3 w-full max-w-md">
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => { setEmail(e.target.value); setEmailError(""); }}
-                placeholder="your@university.edu"
-                required
-                className="flex-1 px-5 py-3 rounded-full border border-gray-200 bg-white text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-black/10 shadow-sm"
-              />
-              <button
-                type="submit"
-                disabled={emailLoading}
-                className="px-6 py-3 bg-black text-white text-sm font-semibold rounded-full hover:bg-gray-800 active:scale-95 transition-all whitespace-nowrap shadow-sm cursor-pointer disabled:opacity-60"
-              >
-                {emailLoading ? "Joining..." : "Join Waitlist"}
-              </button>
+            <form onSubmit={handleEmailSubmit} className="flex flex-col gap-3 w-full max-w-md">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => { setEmail(e.target.value); setEmailError(""); }}
+                  placeholder="your@university.edu"
+                  required
+                  className="flex-1 px-5 py-3 rounded-full border border-gray-200 bg-white text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-black/10 shadow-sm"
+                />
+                <button
+                  type="submit"
+                  disabled={emailLoading || !tosAccepted}
+                  className="px-6 py-3 bg-black text-white text-sm font-semibold rounded-full hover:bg-gray-800 active:scale-95 transition-all whitespace-nowrap shadow-sm cursor-pointer disabled:opacity-60"
+                >
+                  {emailLoading ? "Joining..." : "Join Waitlist"}
+                </button>
+              </div>
+              <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={tosAccepted}
+                  onChange={(e) => setTosAccepted(e.target.checked)}
+                  className="mt-0.5 accent-black shrink-0"
+                />
+                <span className="text-xs text-gray-500">
+                  I agree to the{" "}
+                  <a href="/tos" target="_blank" className="underline hover:text-gray-800">
+                    Terms of Service
+                  </a>
+                </span>
+              </label>
             </form>
           ) : (
             <div className="flex items-center gap-2 px-6 py-3 bg-black text-white text-sm font-semibold rounded-full shadow-sm">

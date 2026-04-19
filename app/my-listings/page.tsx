@@ -111,7 +111,12 @@ function ViewModal({ listing, onClose, onEdit }: {
         {/* Content */}
         <div className="px-6 py-5">
           <div className="flex items-start justify-between gap-2 mb-0.5">
-            <h2 className="text-lg font-bold text-gray-950 leading-snug">{listing.title ?? listing.address}</h2>
+            <div className="flex items-center gap-2 min-w-0">
+              <h2 className="text-lg font-bold text-gray-950 leading-snug truncate">{listing.title ?? listing.address}</h2>
+              {listing.available_to && new Date(listing.available_to) < new Date() && (
+                <span className="shrink-0 px-2 py-0.5 text-[10px] font-semibold rounded-full bg-red-100 text-red-600 uppercase tracking-wide">Expired</span>
+              )}
+            </div>
             <span className="text-lg font-bold text-gray-950 flex-shrink-0">${listing.price.toLocaleString()}<span className="text-sm font-normal text-gray-400">/mo</span></span>
           </div>
           {listing.title && (
@@ -438,8 +443,13 @@ export default function MyListings() {
                   <div className="flex-1 p-5 flex flex-col justify-between">
                     <div>
                       <div className="flex items-start justify-between gap-2">
-                        <button onClick={() => setViewingListing(listing)} className="text-left hover:underline cursor-pointer">
-                          <p className="text-sm font-semibold text-gray-900 leading-snug">{listing.title ?? listing.address}</p>
+                        <button onClick={() => setViewingListing(listing)} className="text-left hover:underline cursor-pointer min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <p className="text-sm font-semibold text-gray-900 leading-snug truncate">{listing.title ?? listing.address}</p>
+                            {listing.available_to && new Date(listing.available_to) < new Date() && (
+                              <span className="shrink-0 px-1.5 py-0.5 text-[9px] font-semibold rounded-full bg-red-100 text-red-600 uppercase tracking-wide">Expired</span>
+                            )}
+                          </div>
                           <p className="text-xs text-gray-400 mt-0.5">{listing.title ? listing.address : listing.type}</p>
                         </button>
                         <span className="text-sm font-bold text-gray-900 flex-shrink-0">${listing.price.toLocaleString()}/mo</span>

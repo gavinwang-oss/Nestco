@@ -215,7 +215,7 @@ export async function POST(req: NextRequest) {
     const selectedListingId = parseSelectedListingId(body);
 
     const [listingsResult, savedResult, profileResult] = await Promise.all([
-      supabase.from("listings").select("*").order("created_at", { ascending: false }),
+      supabase.from("listings").select("*").or(`available_to.is.null,available_to.gte.${new Date().toISOString().slice(0, 10)}`).order("created_at", { ascending: false }),
       userSupabase.from("saved_listings").select("listing_id").eq("user_id", user.id),
       userSupabase
         .from("profiles")
