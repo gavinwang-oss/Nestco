@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { isAdminEmail } from "@/lib/admin";
 
 // Anyone can visit these
-const PUBLIC_PATHS = ["/", "/activate", "/auth/callback", "/tos"];
+const PUBLIC_PATHS = ["/", "/activate", "/auth/callback", "/tos", "/login"];
 
 // Any authenticated user (i.e. a lister who came through magic link) can visit these
 const LISTER_PATHS = ["/my-listings"];
