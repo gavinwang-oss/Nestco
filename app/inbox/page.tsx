@@ -377,6 +377,24 @@ export default function Inbox() {
       shownMatchIds.current.add(result.id);
       await fetchOtherProfile(conv.other_user_id);
       setCelebration({ otherUserId: conv.other_user_id, listingAddress: conv.listing_address });
+
+      // Fire-and-forget match notification emails to both parties
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (!session?.access_token) return;
+        fetch("/api/notify/match", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            listing_id: conv.listing_id,
+            lister_id: conv.listing_user_id,
+            renter_id: conv.listing_user_id === user.id ? conv.other_user_id : user.id,
+            listing_address: conv.listing_address,
+          }),
+        }).catch(() => {});
+      });
     }
   };
 
@@ -400,6 +418,23 @@ export default function Inbox() {
       .single();
     if (data) setAllMessages((prev) => [...prev, data as DbMessage]);
     setSending(false);
+
+    // Fire-and-forget email notification to recipient
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session?.access_token) return;
+      fetch("/api/notify/message", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          recipient_id: selectedConv.other_user_id,
+          listing_id: selectedConv.listing_id,
+          listing_address: selectedConv.listing_address,
+        }),
+      }).catch(() => {});
+    });
   };
 
   // ── Notifications ─────────────────────────────────────────────────────────

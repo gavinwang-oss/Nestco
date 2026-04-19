@@ -148,6 +148,24 @@ function MessageModal({
     });
     setSending(false);
     setSent(true);
+
+    // Fire-and-forget email notification to lister
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session?.access_token) return;
+      fetch("/api/notify/message", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          recipient_id: listing.user_id,
+          listing_id: listing.id,
+          listing_title: listing.title,
+          listing_address: listing.address,
+        }),
+      }).catch(() => {});
+    });
   };
 
   return (
