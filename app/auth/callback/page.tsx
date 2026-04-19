@@ -10,17 +10,29 @@ function AuthCallbackInner() {
 
   useEffect(() => {
     const next = searchParams.get("next") ?? "/browse";
+    const code = searchParams.get("code");
+    const hasMagicLinkParams =
+      Boolean(code) ||
+      window.location.hash.includes("access_token") ||
+      searchParams.has("token_hash");
 
-    // Check if already signed in (e.g. hash token already processed)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        router.push(next);
-      }
-    });
+    if (code) {
+      supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
+        if (!error) router.replace(next);
+      });
+    }
+
+    if (!hasMagicLinkParams) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          router.replace(next);
+        }
+      });
+    }
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session) {
-        router.push(next);
+        router.replace(next);
       }
     });
 

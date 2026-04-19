@@ -59,9 +59,9 @@ function ProfileModal({ onSave, onClose }: { onSave: (p: Profile) => void; onClo
   const { name, age, major, year_in_school, gender } = form;
   const complete = [name, age, major, year_in_school, gender].every((v) => v.trim());
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
       <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-3xl border border-black/[0.06] shadow-xl p-7 w-full max-w-sm mx-4">
+      <div className="relative bg-white sm:rounded-3xl rounded-t-3xl border border-black/[0.06] shadow-xl p-6 sm:p-7 w-full sm:max-w-sm max-h-[90vh] overflow-y-auto">
         <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 cursor-pointer text-lg">✕</button>
         <h2 className="text-base font-semibold text-gray-900 mb-1">Complete your profile</h2>
         <p className="text-xs text-gray-400 mb-5">Used to personalize your intro message to listers.</p>
@@ -151,12 +151,12 @@ function MessageModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
       <div
         className="absolute inset-0 bg-black/20 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative bg-white rounded-3xl border border-black/[0.06] shadow-xl p-7 w-full max-w-md mx-4">
+      <div className="relative bg-white sm:rounded-3xl rounded-t-3xl border border-black/[0.06] shadow-xl p-6 sm:p-7 w-full sm:max-w-md sm:mx-4 max-h-[90vh] overflow-y-auto">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-700 transition-colors cursor-pointer text-lg"
@@ -584,7 +584,7 @@ function ComparePanel({ listings, matchScores, savedIds, onToggleSave, onSelect,
           ✕ Exit compare
         </button>
       </div>
-      <div className="grid grid-cols-2 divide-x divide-black/[0.06]">
+      <div className="grid grid-cols-1 sm:grid-cols-2 sm:divide-x divide-black/[0.06]">
         {listings.map((l, i) => {
           const gradient = GRADIENTS[l.id % GRADIENTS.length];
           const score = matchScores[l.id];
@@ -672,7 +672,7 @@ function ComparePanel({ listings, matchScores, savedIds, onToggleSave, onSelect,
           const vals = listings.map(getValue);
           const same = vals[0] === vals[1];
           return (
-            <div key={label} className="grid grid-cols-[140px_1fr_1fr] items-center">
+            <div key={label} className="grid grid-cols-[100px_1fr_1fr] sm:grid-cols-[140px_1fr_1fr] items-center">
               <div className="px-5 py-3 text-[10px] font-medium text-gray-400 uppercase tracking-wide border-r border-black/[0.06]">{label}</div>
               {listings.map((l, i) => (
                 <div key={l.id} className={`px-5 py-3 text-xs font-medium border-r border-black/[0.04] last:border-r-0 ${!same ? "text-gray-900" : "text-gray-500"}`}>
@@ -714,6 +714,7 @@ function BrowseContent() {
   const [compareMode, setCompareMode] = useState(false);
   const [compareQueue, setCompareQueue] = useState<Listing[]>([]);
   const [comparePicks, setComparePicks] = useState<Listing[]>([]);
+  const [mobileChatOpen, setMobileChatOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<HTMLInputElement>(null);
   const sessionTokenRef = useRef<string | null>(null);
@@ -857,6 +858,8 @@ function BrowseContent() {
     if (!q.trim()) return;
     setHasSearched(true);
     setIsTyping(true);
+    // On mobile, open the chat panel to show AI response
+    setMobileChatOpen(true);
     const userMessage = { role: "user" as const, content: q };
     setMessages([userMessage]);
 
@@ -1125,7 +1128,7 @@ function BrowseContent() {
 
   return (
     <div
-      className="h-screen overflow-hidden flex flex-col"
+      className="h-[100dvh] overflow-hidden flex flex-col"
       style={{
         backgroundColor: "#f5f4f0",
         backgroundImage: `linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px)`,
@@ -1182,12 +1185,12 @@ function BrowseContent() {
             initial={{ opacity: 1 }}
             exit={{ opacity: 0, y: -16 }}
             transition={{ duration: 0.25 }}
-            className="flex-1 flex flex-col items-center justify-center px-6 pb-24"
+            className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 pb-16 sm:pb-24"
           >
-            <h1 className="text-5xl sm:text-[3.5rem] font-bold tracking-tight text-gray-950 text-center mb-3 leading-[1.1]">
+            <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-bold tracking-tight text-gray-950 text-center mb-3 leading-[1.1]">
               What are you<br />looking for?
             </h1>
-            <p className="text-gray-400 text-base mb-8 text-center">
+            <p className="text-gray-400 text-sm sm:text-base mb-6 sm:mb-8 text-center">
               Describe your ideal sublet and our AI will find the best matches.
             </p>
 
@@ -1231,7 +1234,7 @@ function BrowseContent() {
               </div>
             </form>
 
-            <div className="mt-4 flex flex-wrap gap-2 justify-center max-w-2xl">
+            <div className="mt-4 flex flex-wrap sm:flex-wrap gap-2 justify-center max-w-2xl overflow-x-auto">
               {EXAMPLE_PROMPTS.map((prompt) => (
                 <button
                   key={prompt}
@@ -1250,11 +1253,16 @@ function BrowseContent() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3 }}
-            className="flex-1 flex"
-            style={{ height: "calc(100vh - 56px)" }}
+            className="flex-1 flex relative"
+            style={{ height: "calc(100dvh - 56px)" }}
           >
-            {/* Left: Chat panel */}
-            <div className="w-[38%] flex-shrink-0 border-r border-black/[0.06] flex flex-col bg-white/60 backdrop-blur-sm">
+            {/* Left: Chat panel — hidden on mobile, shown as overlay when mobileChatOpen */}
+            <div className={`
+              sm:w-[38%] sm:flex-shrink-0 sm:border-r sm:border-black/[0.06] sm:flex sm:flex-col sm:bg-white/60 sm:backdrop-blur-sm sm:static sm:z-auto
+              fixed inset-0 z-30 flex flex-col bg-white/95 backdrop-blur-md border-r border-black/[0.06]
+              transition-transform duration-300 ease-in-out
+              ${mobileChatOpen ? "translate-y-0" : "translate-y-full sm:translate-y-0"}
+            `}>
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {messages.filter((msg) => msg.content !== "draft_now").map((msg, i) => (
                   <div
@@ -1465,7 +1473,25 @@ function BrowseContent() {
                   </button>
                 </div>
               </form>
+              {/* Mobile close button */}
+              <button
+                onClick={() => setMobileChatOpen(false)}
+                className="sm:hidden mx-3 mb-3 w-full py-2.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-200 transition-colors cursor-pointer flex items-center justify-center gap-2"
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M9 11L5 7L9 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Back to listings
+              </button>
             </div>
+
+            {/* Mobile overlay backdrop */}
+            {mobileChatOpen && (
+              <div
+                className="sm:hidden fixed inset-0 z-20 bg-black/20"
+                onClick={() => setMobileChatOpen(false)}
+              />
+            )}
 
             {/* Right: Listings grid or Detail panel */}
             <div className="flex-1 overflow-hidden flex flex-col">
@@ -1590,7 +1616,7 @@ function BrowseContent() {
                     animate={{ x: 0, opacity: 1 }}
                     exit={{ x: -24, opacity: 0 }}
                     transition={{ duration: 0.2, ease: "easeOut" }}
-                    className="absolute inset-0 overflow-y-auto p-6"
+                    className="absolute inset-0 overflow-y-auto p-3 sm:p-6 pb-20 sm:pb-6"
                   >
                     <div className="mb-5">
                       <p className="text-sm text-gray-500">
@@ -1606,7 +1632,7 @@ function BrowseContent() {
                         No listings yet — check back soon.
                       </div>
                     ) : (
-                      <div className="grid grid-cols-2 xl:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
                         {displayedListings.map((listing, i) => {
                           const gradient = GRADIENTS[i % GRADIENTS.length];
                           const firstPhoto = listing.photos?.[0] ?? null;
@@ -1710,6 +1736,19 @@ function BrowseContent() {
               </AnimatePresence>
               </div>
             </div>
+
+            {/* Mobile floating AI Search button */}
+            {!mobileChatOpen && (
+              <button
+                onClick={() => setMobileChatOpen(true)}
+                className="sm:hidden fixed bottom-6 right-4 z-20 flex items-center gap-2 px-4 py-3 bg-black text-white text-sm font-semibold rounded-full shadow-lg hover:bg-gray-800 active:scale-95 transition-all cursor-pointer"
+              >
+                <div className="w-4 h-4 rounded bg-white/20 flex items-center justify-center flex-shrink-0">
+                  <span className="text-white text-[8px] font-bold">N</span>
+                </div>
+                AI Search
+              </button>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

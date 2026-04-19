@@ -300,7 +300,7 @@ export default function Home() {
           ref={step2Ref}
           className="flex justify-center px-6 pb-24 pt-4"
         >
-          <div className="w-full max-w-md bg-white rounded-3xl border border-black/[0.06] shadow-sm p-8">
+          <div className="w-full max-w-md bg-white rounded-2xl sm:rounded-3xl border border-black/[0.06] shadow-sm p-5 sm:p-8">
             {!detailsSubmitted ? (
               <>
                 <p className="text-xs text-gray-400 font-medium tracking-wide uppercase mb-1">One more thing</p>

@@ -98,10 +98,10 @@ export default function Saved() {
     <div className="min-h-screen flex flex-col" style={BG}>
       <Navbar />
 
-      <div className="max-w-4xl mx-auto w-full px-4 py-10">
-        <div className="flex items-center justify-between mb-8">
+      <div className="max-w-4xl mx-auto w-full px-4 py-6 sm:py-10">
+        <div className="flex items-center justify-between mb-6 sm:mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-gray-950 tracking-tight">Saved listings</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-950 tracking-tight">Saved listings</h1>
             <p className="text-sm text-gray-400 mt-1">
               {listings.length === 0
                 ? "No saved listings yet"
@@ -110,9 +110,9 @@ export default function Saved() {
           </div>
           <button
             onClick={() => router.push("/browse")}
-            className="px-4 py-2 bg-black text-white text-sm font-semibold rounded-full hover:bg-gray-800 transition-colors cursor-pointer"
+            className="px-4 py-2.5 min-h-[44px] bg-black text-white text-sm font-semibold rounded-full hover:bg-gray-800 transition-colors cursor-pointer"
           >
-            Browse listings
+            Browse
           </button>
         </div>
 

@@ -122,13 +122,13 @@ export default function ProfilePage() {
     <div className="min-h-screen flex flex-col" style={bgStyle}>
       <Navbar />
 
-      <div className="max-w-lg mx-auto w-full px-4 py-10">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-950 tracking-tight">Your profile</h1>
+      <div className="max-w-lg mx-auto w-full px-4 py-6 sm:py-10">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-950 tracking-tight">Your profile</h1>
           <p className="text-sm text-gray-400 mt-1">Your name is only revealed to listers after you match.</p>
         </div>
 
-        <div className="bg-white rounded-2xl border border-black/[0.06] shadow-sm p-7">
+        <div className="bg-white rounded-2xl border border-black/[0.06] shadow-sm p-5 sm:p-7">
           {/* Avatar */}
           <div className="flex flex-col items-center mb-7">
             <button
@@ -222,7 +222,7 @@ export default function ProfilePage() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="mt-5 w-full py-2.5 bg-black text-white text-sm font-semibold rounded-full hover:bg-gray-800 transition-all cursor-pointer disabled:opacity-50"
+            className="mt-5 w-full py-3 min-h-[44px] bg-black text-white text-sm font-semibold rounded-full hover:bg-gray-800 transition-all cursor-pointer disabled:opacity-50"
           >
             {saving ? "Saving…" : saved ? "Saved!" : "Save"}
           </button>

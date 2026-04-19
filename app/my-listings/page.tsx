@@ -81,10 +81,10 @@ function ViewModal({ listing, onClose, onEdit }: {
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.4)" }} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-white rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4" style={{ backgroundColor: "rgba(0,0,0,0.4)" }} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="bg-white sm:rounded-3xl rounded-t-3xl w-full sm:max-w-lg max-h-[92vh] overflow-y-auto shadow-2xl">
         {/* Photo */}
-        <div className={`relative h-56 ${hasPhotos ? "" : `bg-gradient-to-br ${GRADIENTS_LOCAL[listing.id % GRADIENTS_LOCAL.length]}`} rounded-t-3xl overflow-hidden`}>
+        <div className={`relative h-48 sm:h-56 ${hasPhotos ? "" : `bg-gradient-to-br ${GRADIENTS_LOCAL[listing.id % GRADIENTS_LOCAL.length]}`} sm:rounded-t-3xl overflow-hidden`}>
           {hasPhotos && (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={listing.photos[photoIndex]} alt={listing.address} className="w-full h-full object-cover" />
@@ -211,8 +211,8 @@ function EditModal({ listing, onClose, onSave }: {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.4)" }} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-white rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4" style={{ backgroundColor: "rgba(0,0,0,0.4)" }} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="bg-white sm:rounded-3xl rounded-t-3xl w-full sm:max-w-lg max-h-[92vh] overflow-y-auto shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-black/[0.06]">
           <h2 className="text-lg font-bold text-gray-950">Edit listing</h2>
@@ -399,16 +399,16 @@ export default function MyListings() {
         />
       )}
 
-      <div className="max-w-3xl mx-auto w-full px-4 py-10">
-        <div className="flex items-center justify-between mb-8">
+      <div className="max-w-3xl mx-auto w-full px-4 py-6 sm:py-10">
+        <div className="flex items-center justify-between mb-6 sm:mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-gray-950 tracking-tight">My listings</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-950 tracking-tight">My listings</h1>
             <p className="text-sm text-gray-400 mt-1">
               {listings.length === 0 ? "No listings yet" : `${listings.length} listing${listings.length !== 1 ? "s" : ""}`}
             </p>
           </div>
-          <Link href="/create" className="px-4 py-2 bg-black text-white text-sm font-semibold rounded-full hover:bg-gray-800 transition-colors">
-            List a new place
+          <Link href="/create" className="px-4 py-2.5 min-h-[44px] flex items-center bg-black text-white text-sm font-semibold rounded-full hover:bg-gray-800 transition-colors">
+            + New listing
           </Link>
         </div>
 
@@ -426,7 +426,7 @@ export default function MyListings() {
               const hasPhoto = listing.photos && listing.photos.length > 0;
               return (
                 <div key={listing.id} className="bg-white rounded-2xl border border-black/[0.06] shadow-sm overflow-hidden flex">
-                  <button onClick={() => setViewingListing(listing)} className="w-36 flex-shrink-0 cursor-pointer">
+                  <button onClick={() => setViewingListing(listing)} className="w-28 sm:w-36 flex-shrink-0 cursor-pointer">
                     {hasPhoto ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={listing.photos[0]} alt={listing.address} className="w-full h-full object-cover" />
@@ -450,19 +450,19 @@ export default function MyListings() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between mt-4">
-                      <span className="text-xs text-gray-300">Listed {formatDate(listing.created_at)}</span>
-                      <div className="flex gap-2">
+                    <div className="flex items-center justify-between mt-3 sm:mt-4">
+                      <span className="text-xs text-gray-300 hidden sm:block">Listed {formatDate(listing.created_at)}</span>
+                      <div className="flex gap-1.5 sm:gap-2 ml-auto">
                         <button onClick={() => setViewingListing(listing)}
-                          className="px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-full hover:bg-gray-50 transition-colors cursor-pointer">
+                          className="px-2.5 sm:px-3 py-1.5 min-h-[36px] text-xs font-medium text-gray-600 border border-gray-200 rounded-full hover:bg-gray-50 transition-colors cursor-pointer">
                           View
                         </button>
                         <button onClick={() => setEditingListing(listing)}
-                          className="px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-full hover:bg-gray-50 transition-colors cursor-pointer">
+                          className="px-2.5 sm:px-3 py-1.5 min-h-[36px] text-xs font-medium text-gray-600 border border-gray-200 rounded-full hover:bg-gray-50 transition-colors cursor-pointer">
                           Edit
                         </button>
                         <button onClick={() => handleDelete(listing)}
-                          className="px-3 py-1.5 text-xs font-medium text-red-600 border border-red-200 rounded-full hover:bg-red-50 transition-colors cursor-pointer">
+                          className="px-2.5 sm:px-3 py-1.5 min-h-[36px] text-xs font-medium text-red-600 border border-red-200 rounded-full hover:bg-red-50 transition-colors cursor-pointer">
                           Delete
                         </button>
                       </div>

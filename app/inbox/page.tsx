@@ -145,6 +145,7 @@ export default function Inbox() {
   const [otherProfiles, setOtherProfiles] = useState<Record<string, string>>({}); // userId → name
   const [fetching, setFetching] = useState(true);
   const [selectedConvKey, setSelectedConvKey] = useState<string | null>(null);
+  const [mobileShowThread, setMobileShowThread] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [sending, setSending] = useState(false);
   const [celebration, setCelebration] = useState<{ otherUserId: string; listingAddress: string } | null>(null);
@@ -444,9 +445,9 @@ export default function Inbox() {
         />
       )}
 
-      <div className="flex-1 flex flex-col max-w-5xl mx-auto w-full px-4 py-8">
-        <div className="mb-5">
-          <h1 className="text-2xl font-bold text-gray-950 tracking-tight">Inbox</h1>
+      <div className="flex-1 flex flex-col max-w-5xl mx-auto w-full px-4 py-6 sm:py-8">
+        <div className="mb-4 sm:mb-5">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-950 tracking-tight">Inbox</h1>
         </div>
 
         {/* Tabs */}
@@ -487,10 +488,10 @@ export default function Inbox() {
           ) : (
             <div
               className="flex bg-white rounded-2xl border border-black/[0.06] shadow-sm overflow-hidden"
-              style={{ height: "calc(100vh - 240px)", minHeight: "520px" }}
+              style={{ height: "calc(100dvh - 220px)", minHeight: "420px" }}
             >
-              {/* Left: conversation list */}
-              <div className="w-72 flex-shrink-0 border-r border-black/[0.06] flex flex-col">
+              {/* Left: conversation list — hidden on mobile when thread is open */}
+              <div className={`${mobileShowThread ? "hidden sm:flex" : "flex"} w-full sm:w-72 flex-shrink-0 border-r border-black/[0.06] flex-col`}>
                 <div className="px-4 py-2.5 border-b border-black/[0.04]">
                   <p className="text-[11px] text-gray-400 italic">Identities hidden until you match</p>
                 </div>
@@ -506,7 +507,7 @@ export default function Inbox() {
                     return (
                       <button
                         key={conv.key}
-                        onClick={() => setSelectedConvKey(conv.key)}
+                        onClick={() => { setSelectedConvKey(conv.key); setMobileShowThread(true); }}
                         className={`w-full text-left px-4 py-3.5 border-b border-black/[0.04] transition-colors cursor-pointer ${
                           isSelected ? "bg-gray-50" : "hover:bg-gray-50/70"
                         }`}
@@ -544,10 +545,19 @@ export default function Inbox() {
                   : "A student";
 
                 return (
-                  <div className="flex-1 flex flex-col min-w-0">
+                  <div className={`${mobileShowThread ? "flex" : "hidden sm:flex"} flex-1 flex-col min-w-0`}>
                     {/* Thread header */}
-                    <div className="px-5 py-3.5 border-b border-black/[0.06] flex items-center justify-between flex-shrink-0">
-                      <div className="min-w-0">
+                    <div className="px-3 sm:px-5 py-3 sm:py-3.5 border-b border-black/[0.06] flex items-center justify-between flex-shrink-0 gap-2">
+                      {/* Mobile back button */}
+                      <button
+                        onClick={() => setMobileShowThread(false)}
+                        className="sm:hidden w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors cursor-pointer flex-shrink-0"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 14 14" fill="none">
+                          <path d="M9 11L5 7L9 3" stroke="#374151" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </button>
+                      <div className="min-w-0 flex-1">
                         <p className="text-sm font-semibold text-gray-900 truncate">{selectedConv.listing_address}</p>
                         <p className="text-xs text-gray-400 capitalize mt-0.5">
                           {selectedConv.listing_type} ·{" "}
@@ -558,11 +568,11 @@ export default function Inbox() {
                           )}
                         </p>
                       </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
+                      <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
                         {/* Match button */}
                         <button
                           onClick={() => handleMatchToggle(selectedConv)}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                          className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 min-h-[36px] rounded-full text-xs font-semibold transition-all cursor-pointer ${
                             isMutualMatch
                               ? "bg-green-500 text-white shadow-sm"
                               : myInterested
@@ -571,11 +581,11 @@ export default function Inbox() {
                           }`}
                         >
                           <span>{isMutualMatch ? "✓" : myInterested ? "♥" : "♡"}</span>
-                          <span>{isMutualMatch ? "Matched" : myInterested ? "Interested" : "Match"}</span>
+                          <span className="hidden sm:inline">{isMutualMatch ? "Matched" : myInterested ? "Interested" : "Match"}</span>
                         </button>
                         <Link
                           href={`/browse?listing=${selectedConv.listing_id}`}
-                          className="text-xs text-gray-400 hover:text-gray-700 transition-colors"
+                          className="text-xs text-gray-400 hover:text-gray-700 transition-colors hidden sm:inline"
                         >
                           View →
                         </Link>

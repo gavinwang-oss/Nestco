@@ -260,11 +260,11 @@ export default function Create() {
         </div>
       )}
 
-      <div className="flex-1 flex items-start justify-center px-6 py-12">
+      <div className="flex-1 flex items-start justify-center px-4 sm:px-6 py-6 sm:py-12">
         <div className="w-full max-w-xl">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold text-gray-950 mb-1">
+          <div className="mb-6 sm:mb-8">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-950 mb-1">
               List your place
             </h1>
             <p className="text-sm text-gray-400">
@@ -280,7 +280,7 @@ export default function Create() {
           </div>
 
           {/* Form card */}
-          <div className="bg-white rounded-3xl border border-black/[0.06] shadow-sm p-8">
+          <div className="bg-white rounded-2xl sm:rounded-3xl border border-black/[0.06] shadow-sm p-5 sm:p-8">
             {/* ── Step 1: Basics ── */}
             {step === 0 && (
               <div className="flex flex-col gap-6">
@@ -621,12 +621,12 @@ export default function Create() {
             )}
 
             {/* Navigation */}
-            <div className="flex justify-between mt-8 pt-6 border-t border-gray-100">
+            <div className="flex justify-between mt-6 sm:mt-8 pt-5 sm:pt-6 border-t border-gray-100">
               {step > 0 ? (
                 <button
                   type="button"
                   onClick={back}
-                  className="px-5 py-2.5 border border-gray-200 text-sm font-medium text-gray-600 rounded-full hover:border-gray-400 transition-all cursor-pointer"
+                  className="px-5 py-2.5 min-h-[44px] border border-gray-200 text-sm font-medium text-gray-600 rounded-full hover:border-gray-400 transition-all cursor-pointer"
                 >
                   Back
                 </button>
@@ -638,7 +638,7 @@ export default function Create() {
                 <button
                   type="button"
                   onClick={next}
-                  className="px-6 py-2.5 bg-black text-white text-sm font-semibold rounded-full hover:bg-gray-800 transition-all cursor-pointer"
+                  className="px-6 py-2.5 min-h-[44px] bg-black text-white text-sm font-semibold rounded-full hover:bg-gray-800 transition-all cursor-pointer"
                 >
                   Continue
                 </button>
@@ -647,7 +647,7 @@ export default function Create() {
                   type="button"
                   onClick={handleSubmit}
                   disabled={submitting}
-                  className="px-6 py-2.5 bg-black text-white text-sm font-semibold rounded-full hover:bg-gray-800 transition-all cursor-pointer disabled:opacity-60"
+                  className="px-6 py-2.5 min-h-[44px] bg-black text-white text-sm font-semibold rounded-full hover:bg-gray-800 transition-all cursor-pointer disabled:opacity-60"
                 >
                   {submitting ? "Publishing..." : "Publish listing"}
                 </button>

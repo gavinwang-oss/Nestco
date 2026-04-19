@@ -227,7 +227,7 @@ function RequestFormModal({ onClose, onSuccess }: { onClose: () => void; onSucce
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 40, scale: 0.97 }}
         transition={{ type: "spring", stiffness: 320, damping: 28 }}
-        className="w-full max-w-lg bg-white rounded-3xl border border-black/[0.06] shadow-xl overflow-hidden"
+        className="w-full max-w-lg bg-white sm:rounded-3xl rounded-t-3xl border border-black/[0.06] shadow-xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal header */}
@@ -247,7 +247,7 @@ function RequestFormModal({ onClose, onSuccess }: { onClose: () => void; onSucce
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-5 max-h-[70vh] overflow-y-auto">
+        <form onSubmit={handleSubmit} className="p-5 sm:p-6 flex flex-col gap-4 sm:gap-5 max-h-[75vh] overflow-y-auto">
           {/* Description */}
           <div>
             <label className="text-xs font-medium text-gray-500 block mb-1.5">
@@ -425,11 +425,11 @@ export default function RequestsPage() {
     >
       <Navbar />
 
-      <div className="flex-1 px-6 py-10 max-w-4xl mx-auto w-full">
+      <div className="flex-1 px-4 sm:px-6 py-6 sm:py-10 max-w-4xl mx-auto w-full">
         {/* Header */}
-        <div className="flex items-start justify-between mb-8 gap-4">
+        <div className="flex items-start justify-between mb-6 sm:mb-8 gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-gray-950 mb-1">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-950 mb-1">
               Open requests{" "}
               {!loading && (
                 <span className="text-lg font-normal text-gray-400">
@@ -445,16 +445,17 @@ export default function RequestsPage() {
           {user ? (
             <button
               onClick={() => setShowModal(true)}
-              className="flex-shrink-0 px-5 py-2.5 bg-black text-white text-sm font-semibold rounded-full hover:bg-gray-800 transition-all cursor-pointer"
+              className="flex-shrink-0 px-4 sm:px-5 py-2.5 min-h-[44px] bg-black text-white text-sm font-semibold rounded-full hover:bg-gray-800 transition-all cursor-pointer"
             >
-              Post a request
+              <span className="hidden sm:inline">Post a request</span>
+              <span className="sm:hidden">+ Post</span>
             </button>
           ) : (
             <Link
               href="/browse"
-              className="flex-shrink-0 px-5 py-2.5 bg-black text-white text-sm font-semibold rounded-full hover:bg-gray-800 transition-all"
+              className="flex-shrink-0 px-4 sm:px-5 py-2.5 min-h-[44px] flex items-center bg-black text-white text-sm font-semibold rounded-full hover:bg-gray-800 transition-all"
             >
-              Sign in to post
+              Sign in
             </Link>
           )}
         </div>
