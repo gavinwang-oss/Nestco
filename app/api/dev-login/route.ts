@@ -1,13 +1,16 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
-import { isAdminEmail } from "@/lib/admin";
 
-// Generates a magic link for a user without sending an email.
-// Only works for admin emails — never exposes links for arbitrary users.
+// Hardcoded list of accounts that can be accessed via /dev-login.
+// Never include real user accounts here.
+const DEV_EMAILS = ["developer@nestco.edu", "gavin_wang@berkeley.edu"];
+
+// Generates a magic link for a test account without sending an email.
+// Only works for the explicitly whitelisted dev emails above.
 export async function POST(req: NextRequest) {
   const { email } = await req.json();
 
-  if (!email || !isAdminEmail(email)) {
+  if (!email || !DEV_EMAILS.includes(email.toLowerCase())) {
     return NextResponse.json({ error: "Not allowed" }, { status: 403 });
   }
 
