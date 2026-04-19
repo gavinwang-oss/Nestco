@@ -1006,7 +1006,7 @@ function BrowseContent() {
           const relevantListings = hasScores
             ? displayedListings.filter((l) => (matchScores[l.id] ?? 0) > 0)
             : displayedListings;
-          const queue = relevantListings.filter((l) => !toCompare.some((c) => c.id === l.id));
+          const queue = relevantListings.filter((l) => !toCompare.some((c) => c.id === l.id) && savedIds.has(l.id));
           setCompareListings(toCompare);
           setCompareMode(true);
           setCompareQueue(queue);
