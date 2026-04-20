@@ -1644,9 +1644,13 @@ function BrowseContent() {
                   >
                     {/* Profile completion banner */}
                     {profileLoaded && user && !profileBannerDismissed &&
-                      (!userProfile || !["name", "age", "major", "year_in_school", "gender"].every(
-                        (f) => (userProfile as Record<string, string>)[f]?.trim()
-                      )) && (
+                      (!userProfile ||
+                        !userProfile.name?.trim() ||
+                        !userProfile.age ||
+                        !userProfile.major?.trim() ||
+                        !userProfile.year_in_school?.trim() ||
+                        !userProfile.gender?.trim()
+                      ) && (
                       <div className="flex items-center justify-between gap-3 mb-4 px-4 py-3 bg-black/[0.04] rounded-2xl">
                         <p className="text-sm text-gray-700">
                           <span className="font-medium">Complete your profile</span>
