@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence, useMotionValue, useTransform, type PanInfo } from "framer-motion";
 import Navbar from "@/components/Navbar";
+import OnboardingTooltip from "@/components/OnboardingTooltip";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -1160,6 +1161,7 @@ function BrowseContent() {
       }}
     >
       <Navbar />
+      <OnboardingTooltip />
 
       {showProfileModal && (
         <ProfileModal
