@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence, useMotionValue, useTransform, type PanInfo } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import OnboardingTooltip from "@/components/OnboardingTooltip";
+import SwipeTutorial from "@/components/SwipeTutorial";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -273,6 +274,8 @@ function ListingDetail({
 
   return (
     <div className="absolute inset-0 overflow-y-auto p-6">
+      <SwipeTutorial />
+
       {/* Back */}
       <button
         onClick={onBack}
