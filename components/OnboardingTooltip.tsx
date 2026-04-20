@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 
-const STORAGE_KEY = "nestco_onboarding_v1";
+const STORAGE_KEY = "nestco_onboarding_v2";
 
 const STEPS = [
   {
@@ -37,6 +37,17 @@ const STEPS = [
     ),
     title: "Save listings & match",
     body: "Bookmark listings as you browse. When both you and a lister are interested, you mutually match — identities are revealed and you can coordinate directly.",
+  },
+  {
+    icon: (
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+        <path d="M5 7h18M5 13h12M5 19h8" stroke="#111" strokeWidth="1.5" strokeLinecap="round"/>
+        <circle cx="22" cy="19" r="4" fill="white" stroke="#111" strokeWidth="1.5"/>
+        <path d="M22 17v2.5l1.5 1.5" stroke="#111" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    ),
+    title: "Don't see what you need?",
+    body: "Post a housing request — describe what you're looking for and your budget. When a matching listing goes live, you'll get notified automatically.",
   },
 ];
 
