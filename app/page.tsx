@@ -234,7 +234,7 @@ export default function Home() {
           </div>
           <div className="absolute top-[60%] left-[4%]" style={{ transform: "rotate(5deg)" }}>
             <div style={{ animation: "floatY 6s ease-in-out 2s infinite" }}>
-              <ListingCard title="Private Room in 3BR Apt @ Standard" price="$1,050" type="1 Room" location="Telegraph Ave" photo="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&q=80" />
+              <ListingCard title="Private Room in 3BR Apt @ Standard" price="$1,500" type="1 Room" location="Telegraph Ave" photo="https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=400&q=80" />
             </div>
           </div>
           <div className="absolute top-[10%] right-[5%]" style={{ transform: "rotate(6deg)" }}>
