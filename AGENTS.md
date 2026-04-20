@@ -142,9 +142,6 @@ The `/api/match-requests` endpoint verifies the Bearer token, fetches the listin
 - `AuthModal` (password-based) still exists and is rendered by `Navbar`, but has no trigger. The primary login path for all users — including password-account users — is `/login` (magic link).
 
 ## Things NOT yet built
-- TOS acceptance checkbox on signup
-- Listing expiry / auto-deactivation
 - Referral/ambassador tracking links
 - Full Supabase migrations for all tables, storage buckets, RLS policies, and indexes
-- Confirmation email after waitlist signup (users only see on-screen confirmation)
 - Removing the isAdmin gate from the Navbar so regular users can access Browse, Requests, Saved, Inbox, and Profile

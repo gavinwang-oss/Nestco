@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { supabase } from "@/lib/supabase";
 
 type WaitlistBody = {
   email?: unknown;
@@ -72,7 +71,16 @@ export async function POST(req: NextRequest) {
     }
 
     if (!hasDetails(body)) {
-      const { data, error } = await supabase
+      const serviceClient = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        { auth: { autoRefreshToken: false, persistSession: false } }
+      );
+
+      let waitlistId: string | number | null = null;
+      let isNewEntry = false;
+
+      const { data, error } = await serviceClient
         .from("Waitlist")
         .insert([{ email }])
         .select("id")
@@ -81,22 +89,73 @@ export async function POST(req: NextRequest) {
       if (error) {
         if (error.code === "23505") {
           // Email already exists — look up existing ID so the lister form can still proceed
-          const sc = createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY!,
-            { auth: { autoRefreshToken: false, persistSession: false } }
-          );
-          const { data: existing } = await sc
+          const { data: existing } = await serviceClient
             .from("Waitlist")
             .select("id")
             .eq("email", email)
             .single();
-          return NextResponse.json({ success: true, waitlist_id: existing?.id ?? null }, { status: 200 });
+          waitlistId = existing?.id ?? null;
+          // Already registered user — don't re-send confirmation email
+        } else {
+          return NextResponse.json({ error: error.message }, { status: 500 });
         }
-        return NextResponse.json({ error: error.message }, { status: 500 });
+      } else {
+        waitlistId = data?.id ?? null;
+        isNewEntry = true;
       }
 
-      return NextResponse.json({ success: true, waitlist_id: data?.id }, { status: 200 });
+      if (isNewEntry) {
+        // Create Supabase auth account (email_confirm: true = no verification email from Supabase)
+        await serviceClient.auth.admin.createUser({ email, email_confirm: true });
+        // Errors silently ignored — user may already exist from a prior magic link flow
+
+        // Send branded confirmation email via Resend
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.nestco.ai";
+        await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            from: "Nestco <noreply@nestco.ai>",
+            to: email,
+            subject: "You're on the Nestco waitlist 🎉",
+            html: `
+              <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 24px; background: #ffffff;">
+                <table cellpadding="0" cellspacing="0" style="margin-bottom: 32px;">
+                  <tr>
+                    <td style="width: 32px; height: 32px; background: #000; border-radius: 8px; text-align: center; vertical-align: middle;">
+                      <span style="color: white; font-size: 14px; font-weight: 700; line-height: 32px;">N</span>
+                    </td>
+                    <td style="padding-left: 10px; font-size: 17px; font-weight: 600; color: #111; vertical-align: middle;">nestco</td>
+                  </tr>
+                </table>
+
+                <h1 style="font-size: 22px; font-weight: 700; color: #0f0f0f; margin: 0 0 8px;">You're on the list!</h1>
+                <p style="font-size: 15px; color: #555; margin: 0 0 24px; line-height: 1.6;">
+                  Thanks for joining Nestco — the student sublet marketplace built for UC Berkeley.
+                  We're launching soon and you'll be among the first to get access.
+                </p>
+                <p style="font-size: 15px; color: #555; margin: 0 0 28px; line-height: 1.6;">
+                  In the meantime, if you have a place to sublet, reply to this email or visit the site to list it now.
+                </p>
+
+                <a href="${appUrl}" style="display: inline-block; background: #000; color: #fff; text-decoration: none; font-size: 14px; font-weight: 600; padding: 12px 24px; border-radius: 100px;">
+                  Visit Nestco →
+                </a>
+
+                <p style="font-size: 12px; color: #aaa; margin-top: 40px; line-height: 1.6;">
+                  Questions? Reply to this email or reach us at <a href="mailto:support@nestco.ai" style="color: #aaa;">support@nestco.ai</a><br>
+                  <a href="${appUrl}" style="color: #aaa;">nestco.ai</a>
+                </p>
+              </div>
+            `,
+          }),
+        });
+      }
+
+      return NextResponse.json({ success: true, waitlist_id: waitlistId }, { status: 200 });
     }
 
     if (typeof body.waitlist_id !== "number" && typeof body.waitlist_id !== "string") {
@@ -192,25 +251,62 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Failed to save your listing details." }, { status: 500 });
       }
 
-      // Send magic link via anon client
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
-      const { error: otpError } = await supabase.auth.signInWithOtp({
+      // Generate magic link via admin API (no Supabase-sent email) then send custom email via Resend
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.nestco.ai";
+      const { data: linkData, error: linkError } = await serviceClient.auth.admin.generateLink({
+        type: "magiclink",
         email,
-        options: {
-          emailRedirectTo: appUrl + "/auth/callback?next=/activate",
-          shouldCreateUser: true,
-        },
+        options: { redirectTo: appUrl + "/auth/callback?next=/activate" },
       });
 
-      if (otpError) {
-        console.error("Failed to send magic link:", otpError.message);
-        const isRateLimit = otpError.message.toLowerCase().includes("rate") || otpError.status === 429;
+      if (linkError) {
+        console.error("Failed to generate magic link:", linkError.message);
         return NextResponse.json({
-          error: isRateLimit
-            ? "Too many attempts. Please wait a few minutes and try again."
-            : "Your listing was saved but we couldn't send the email. Please try again shortly.",
+          error: "Your listing was saved but we couldn't send the email. Please try again shortly.",
         }, { status: 500 });
       }
+
+      const magicLink = linkData.properties?.action_link ?? "";
+
+      await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: "Nestco <noreply@nestco.ai>",
+          to: email,
+          subject: "Publish your listing on Nestco",
+          html: `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 24px; background: #ffffff;">
+              <table cellpadding="0" cellspacing="0" style="margin-bottom: 32px;">
+                <tr>
+                  <td style="width: 32px; height: 32px; background: #000; border-radius: 8px; text-align: center; vertical-align: middle;">
+                    <span style="color: white; font-size: 14px; font-weight: 700; line-height: 32px;">N</span>
+                  </td>
+                  <td style="padding-left: 10px; font-size: 17px; font-weight: 600; color: #111; vertical-align: middle;">nestco</td>
+                </tr>
+              </table>
+
+              <h1 style="font-size: 22px; font-weight: 700; color: #0f0f0f; margin: 0 0 8px;">Your listing is ready to publish</h1>
+              <p style="font-size: 15px; color: #555; margin: 0 0 24px; line-height: 1.6;">
+                We've got your listing details. Click the button below to publish it on Nestco and start getting matched with renters.
+              </p>
+              <p style="font-size: 13px; color: #888; margin: 0 0 28px;">This link expires in 24 hours.</p>
+
+              <a href="${magicLink}" style="display: inline-block; background: #000; color: #fff; text-decoration: none; font-size: 14px; font-weight: 600; padding: 12px 24px; border-radius: 100px;">
+                Publish my listing →
+              </a>
+
+              <p style="font-size: 12px; color: #aaa; margin-top: 40px; line-height: 1.6;">
+                Questions? Reply to this email or reach us at <a href="mailto:support@nestco.ai" style="color: #aaa;">support@nestco.ai</a><br>
+                <a href="${appUrl}" style="color: #aaa;">nestco.ai</a>
+              </p>
+            </div>
+          `,
+        }),
+      });
     }
 
     return NextResponse.json({ success: true }, { status: 200 });

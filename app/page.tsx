@@ -7,17 +7,18 @@ function ListingCard({
   price,
   type,
   location,
-  gradient,
+  photo,
 }: {
   title: string;
   price: string;
   type: string;
   location: string;
-  gradient: string;
+  photo: string;
 }) {
   return (
     <div className="bg-white rounded-2xl shadow-md p-4 w-52 border border-black/[0.06]">
-      <div className={`w-full h-24 ${gradient} rounded-xl mb-3`} />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={photo} alt="" className="w-full h-24 object-cover rounded-xl mb-3" />
       <p className="text-xs text-gray-400 mb-1">
         {type} · {location}
       </p>
@@ -38,7 +39,7 @@ function SearchCard() {
         <p className="text-xs text-gray-400 font-medium tracking-wide uppercase">AI Search</p>
       </div>
       <p className="text-sm text-gray-600 italic leading-relaxed">
-        &ldquo;Single room near campus under $1,400, female roommates only&rdquo;
+        &ldquo;Single room southside under $1,400, female roommates only&rdquo;
       </p>
       <div className="mt-3 flex gap-2 flex-wrap">
         <div className="h-5 w-14 bg-stone-100 rounded-full" />
@@ -228,12 +229,12 @@ export default function Home() {
         <div className="hidden lg:block">
           <div className="absolute top-[12%] left-[5%]" style={{ transform: "rotate(-7deg)" }}>
             <div style={{ animation: "floatY 6s ease-in-out infinite" }}>
-              <ListingCard title="Bright Studio near Campanile" price="$1,200" type="Studio" location="Downtown Berkeley" gradient="bg-gradient-to-br from-amber-100 to-orange-200" />
+              <ListingCard title="Bright Studio near Trader Joe's" price="$1,200" type="Studio" location="Downtown Berkeley" photo="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&q=80" />
             </div>
           </div>
           <div className="absolute top-[60%] left-[4%]" style={{ transform: "rotate(5deg)" }}>
             <div style={{ animation: "floatY 6s ease-in-out 2s infinite" }}>
-              <ListingCard title="Private Room in 3BR Apt" price="$1,050" type="1 Room" location="Telegraph Ave" gradient="bg-gradient-to-br from-blue-100 to-indigo-200" />
+              <ListingCard title="Private Room in 3BR Apt @ Standard" price="$1,050" type="1 Room" location="Telegraph Ave" photo="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&q=80" />
             </div>
           </div>
           <div className="absolute top-[10%] right-[5%]" style={{ transform: "rotate(6deg)" }}>
@@ -243,7 +244,7 @@ export default function Home() {
           </div>
           <div className="absolute top-[52%] right-[4%]" style={{ transform: "rotate(-5deg)" }}>
             <div style={{ animation: "floatY 6s ease-in-out 3s infinite" }}>
-              <ListingCard title="Sunny Room, Female Only" price="$980" type="1 Room" location="Northside" gradient="bg-gradient-to-br from-pink-100 to-rose-200" />
+              <ListingCard title="Sunny Room, Female Only" price="$980" type="1 Room" location="Northside" photo="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&q=80" />
             </div>
           </div>
           <div className="absolute bottom-[10%] right-[8%]" style={{ transform: "rotate(3deg)" }}>
