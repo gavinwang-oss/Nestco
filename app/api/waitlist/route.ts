@@ -105,11 +105,6 @@ export async function POST(req: NextRequest) {
       }
 
       if (isNewEntry) {
-        // Create auth account — ignore errors (user may already exist)
-        try {
-          await serviceClient.auth.admin.createUser({ email, email_confirm: true });
-        } catch { /* ignore */ }
-
         // Send confirmation email — ignore errors so they never break the response
         try {
           const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.nestco.ai";
