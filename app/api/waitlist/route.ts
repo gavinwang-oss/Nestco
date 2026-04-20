@@ -105,54 +105,59 @@ export async function POST(req: NextRequest) {
       }
 
       if (isNewEntry) {
-        // Create Supabase auth account (email_confirm: true = no verification email from Supabase)
-        await serviceClient.auth.admin.createUser({ email, email_confirm: true });
-        // Errors silently ignored — user may already exist from a prior magic link flow
+        // Fire-and-forget: create auth account + send confirmation email.
+        // Wrapped in its own try/catch so failures here never break the waitlist insert response.
+        (async () => {
+          try {
+            await serviceClient.auth.admin.createUser({ email, email_confirm: true });
+          } catch { /* user may already exist — ignore */ }
 
-        // Send branded confirmation email via Resend
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.nestco.ai";
-        await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            from: "Nestco <noreply@nestco.ai>",
-            to: email,
-            subject: "You're on the Nestco waitlist 🎉",
-            html: `
-              <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 24px; background: #ffffff;">
-                <table cellpadding="0" cellspacing="0" style="margin-bottom: 32px;">
-                  <tr>
-                    <td style="width: 32px; height: 32px; background: #000; border-radius: 8px; text-align: center; vertical-align: middle;">
-                      <span style="color: white; font-size: 14px; font-weight: 700; line-height: 32px;">N</span>
-                    </td>
-                    <td style="padding-left: 10px; font-size: 17px; font-weight: 600; color: #111; vertical-align: middle;">nestco</td>
-                  </tr>
-                </table>
+          try {
+            const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.nestco.ai";
+            await fetch("https://api.resend.com/emails", {
+              method: "POST",
+              headers: {
+                "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                from: "Nestco <noreply@nestco.ai>",
+                to: email,
+                subject: "You're on the Nestco waitlist 🎉",
+                html: `
+                  <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 24px; background: #ffffff;">
+                    <table cellpadding="0" cellspacing="0" style="margin-bottom: 32px;">
+                      <tr>
+                        <td style="width: 32px; height: 32px; background: #000; border-radius: 8px; text-align: center; vertical-align: middle;">
+                          <span style="color: white; font-size: 14px; font-weight: 700; line-height: 32px;">N</span>
+                        </td>
+                        <td style="padding-left: 10px; font-size: 17px; font-weight: 600; color: #111; vertical-align: middle;">nestco</td>
+                      </tr>
+                    </table>
 
-                <h1 style="font-size: 22px; font-weight: 700; color: #0f0f0f; margin: 0 0 8px;">You're on the list!</h1>
-                <p style="font-size: 15px; color: #555; margin: 0 0 24px; line-height: 1.6;">
-                  Thanks for joining Nestco — the student sublet marketplace built for UC Berkeley.
-                  We're launching soon and you'll be among the first to get access.
-                </p>
-                <p style="font-size: 15px; color: #555; margin: 0 0 28px; line-height: 1.6;">
-                  In the meantime, if you have a place to sublet, reply to this email or visit the site to list it now.
-                </p>
+                    <h1 style="font-size: 22px; font-weight: 700; color: #0f0f0f; margin: 0 0 8px;">You're on the list!</h1>
+                    <p style="font-size: 15px; color: #555; margin: 0 0 24px; line-height: 1.6;">
+                      Thanks for joining Nestco — the student sublet marketplace built for UC Berkeley.
+                      We're launching soon and you'll be among the first to get access.
+                    </p>
+                    <p style="font-size: 15px; color: #555; margin: 0 0 28px; line-height: 1.6;">
+                      In the meantime, if you have a place to sublet, reply to this email or visit the site to list it now.
+                    </p>
 
-                <a href="${appUrl}" style="display: inline-block; background: #000; color: #fff; text-decoration: none; font-size: 14px; font-weight: 600; padding: 12px 24px; border-radius: 100px;">
-                  Visit Nestco →
-                </a>
+                    <a href="${appUrl}" style="display: inline-block; background: #000; color: #fff; text-decoration: none; font-size: 14px; font-weight: 600; padding: 12px 24px; border-radius: 100px;">
+                      Visit Nestco →
+                    </a>
 
-                <p style="font-size: 12px; color: #aaa; margin-top: 40px; line-height: 1.6;">
-                  Questions? Reply to this email or reach us at <a href="mailto:support@nestco.ai" style="color: #aaa;">support@nestco.ai</a><br>
-                  <a href="${appUrl}" style="color: #aaa;">nestco.ai</a>
-                </p>
-              </div>
-            `,
-          }),
-        });
+                    <p style="font-size: 12px; color: #aaa; margin-top: 40px; line-height: 1.6;">
+                      Questions? Reply to this email or reach us at <a href="mailto:support@nestco.ai" style="color: #aaa;">support@nestco.ai</a><br>
+                      <a href="${appUrl}" style="color: #aaa;">nestco.ai</a>
+                    </p>
+                  </div>
+                `,
+              }),
+            });
+          } catch { /* Resend failure — ignore, don't block response */ }
+        })();
       }
 
       return NextResponse.json({ success: true, waitlist_id: waitlistId }, { status: 200 });
