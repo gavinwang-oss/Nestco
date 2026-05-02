@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
         title: pending.title ?? null,
         type: pending.listing_type,
         address: pending.address,
-        price: pending.price,
+        price: pending.price ? (parseInt(String(pending.price), 10) || 0) : 0,
         available_from: pending.available_from,
         available_to: pending.available_to,
         description: pending.description,
