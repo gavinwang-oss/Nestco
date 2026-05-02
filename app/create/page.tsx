@@ -149,13 +149,14 @@ export default function Create() {
     setSubmitting(true);
 
     // Upload photos
+    const { toJpegBlob } = await import("@/lib/imageUtils");
     const photoUrls: string[] = [];
     for (const photo of form.photos) {
-      const safeName = photo.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
-      const path = `${user.id}/${Date.now()}-${safeName}`;
+      const path = `${user.id}/${Date.now()}-${crypto.randomUUID()}.jpg`;
+      const jpeg = await toJpegBlob(photo);
       const { error: uploadError } = await supabase.storage
         .from("listing-photos")
-        .upload(path, photo);
+        .upload(path, jpeg, { contentType: "image/jpeg" });
       if (uploadError) {
         console.error("Photo upload failed:", uploadError.message);
         setErrors([`Photo upload failed: ${uploadError.message}`]);

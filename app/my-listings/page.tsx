@@ -176,10 +176,11 @@ function EditModal({ listing, onClose, onSave }: {
     if (!files || files.length === 0) return;
     setUploadingPhoto(true);
     const newUrls: string[] = [];
+    const { toJpegBlob } = await import("@/lib/imageUtils");
     for (const file of Array.from(files).slice(0, 10 - photos.length)) {
-      const ext = file.name.split(".").pop() ?? "jpg";
-      const path = `${listing.id}/${crypto.randomUUID()}.${ext}`;
-      const { error } = await supabase.storage.from("listing-photos").upload(path, file, { contentType: file.type, upsert: false });
+      const path = `${listing.id}/${crypto.randomUUID()}.jpg`;
+      const jpeg = await toJpegBlob(file);
+      const { error } = await supabase.storage.from("listing-photos").upload(path, jpeg, { contentType: "image/jpeg", upsert: false });
       if (!error) {
         const { data } = supabase.storage.from("listing-photos").getPublicUrl(path);
         newUrls.push(data.publicUrl);

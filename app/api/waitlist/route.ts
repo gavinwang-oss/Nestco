@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import sharp from "sharp";
 
 type WaitlistBody = {
   email?: unknown;
@@ -220,12 +221,12 @@ export async function POST(req: NextRequest) {
       const photoFiles = ((body as Record<string, unknown>)._photoFiles as File[]) ?? [];
       const photoUrls: string[] = [];
       for (const file of photoFiles.slice(0, 10)) {
-        const ext = file.name.split(".").pop() ?? "jpg";
-        const path = `pending/${crypto.randomUUID()}.${ext}`;
-        const buffer = Buffer.from(await file.arrayBuffer());
+        const path = `pending/${crypto.randomUUID()}.jpg`;
+        const rawBuffer = Buffer.from(await file.arrayBuffer());
+        const buffer = await sharp(rawBuffer).jpeg({ quality: 85 }).toBuffer();
         const { error: uploadError } = await serviceClient.storage
           .from("listing-photos")
-          .upload(path, buffer, { contentType: file.type, upsert: false });
+          .upload(path, buffer, { contentType: "image/jpeg", upsert: false });
         if (!uploadError) {
           const { data: urlData } = serviceClient.storage.from("listing-photos").getPublicUrl(path);
           photoUrls.push(urlData.publicUrl);
