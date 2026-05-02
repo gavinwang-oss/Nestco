@@ -1214,7 +1214,7 @@ function BrowseContent() {
     <div
       className="h-[100dvh] overflow-hidden flex flex-col"
       style={{
-        backgroundImage: `url('/sandynograin.png')`,
+        backgroundImage: `url('/sb1.png')`,
         backgroundSize: "cover",
         backgroundPosition: "center",
       }}
