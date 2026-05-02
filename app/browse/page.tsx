@@ -338,7 +338,7 @@ function ListingDetail({
         </motion.div>
 
         {/* Photo */}
-        <div className={`relative h-64 ${listing.photos?.length > 0 ? "" : `bg-gradient-to-br ${GRADIENTS[listing.id % GRADIENTS.length]}`}`}>
+        <div className={`relative aspect-[4/3] ${listing.photos?.length > 0 ? "" : `bg-gradient-to-br ${GRADIENTS[listing.id % GRADIENTS.length]}`}`}>
           {listing.photos?.length > 0 && (
             <img src={listing.photos[photoIndex]} alt={listing.address} className="w-full h-full object-cover" />
           )}
@@ -634,7 +634,7 @@ function ComparePanel({ listings, matchScores, savedIds, onToggleSave, onSelect,
                   {compareQueue.length > 0 ? `Swipe left to swap · ${compareQueue.length} in queue` : "Swipe left to remove"}
                 </span>
               </motion.div>
-              <div className={`h-40 relative group/photo ${l.photos?.length ? "" : `bg-gradient-to-br ${gradient}`}`}>
+              <div className={`aspect-[4/3] relative group/photo ${l.photos?.length ? "" : `bg-gradient-to-br ${gradient}`}`}>
                 {l.photos?.length ? (
                   <>
                     <img src={l.photos[getPhotoIndex(l.id)]} alt={l.address} className="w-full h-full object-cover" />
