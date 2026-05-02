@@ -61,7 +61,7 @@ export default function Navbar() {
   return (
     <>
       {/* Desktop navbar */}
-      <nav className="hidden sm:flex h-13 border-b border-black/[0.06] bg-white/80 backdrop-blur-md items-center px-5 justify-between flex-shrink-0 sticky top-0 z-40">
+      <nav className="hidden sm:flex h-13 border-b border-black/[0.06] backdrop-blur-md items-center px-5 justify-between flex-shrink-0 sticky top-0 z-40" style={{ backgroundColor: "#f1e9e4" }}>
         {/* Logo */}
         <Link href="/browse" className="flex items-center gap-2 cursor-pointer flex-shrink-0">
           <div className="w-7 h-7 bg-black rounded-md flex items-center justify-center">
@@ -127,7 +127,7 @@ export default function Navbar() {
       </nav>
 
       {/* Mobile top bar */}
-      <nav className="sm:hidden h-13 border-b border-black/[0.06] bg-white/90 backdrop-blur-md flex items-center px-4 justify-between flex-shrink-0 sticky top-0 z-40">
+      <nav className="sm:hidden h-13 border-b border-black/[0.06] backdrop-blur-md flex items-center px-4 justify-between flex-shrink-0 sticky top-0 z-40" style={{ backgroundColor: "#f1e9e4" }}>
         <Link href="/browse" className="flex items-center gap-2 cursor-pointer">
           <div className="w-7 h-7 bg-black rounded-md flex items-center justify-center">
             <span className="text-white text-xs font-bold">N</span>
