@@ -587,17 +587,19 @@ export default function Home() {
                           accept="image/*"
                           multiple
                           className="hidden"
-                          onChange={(e) => {
+                          onChange={async (e) => {
                             const newFiles = Array.from(e.target.files ?? []);
-                            setPhotos((prev) => [...prev, ...newFiles]);
-                            newFiles.forEach((file) => {
+                            if (photoInputRef.current) photoInputRef.current.value = "";
+                            const { toJpegBlob } = await import("@/lib/imageUtils");
+                            for (const file of newFiles) {
+                              const blob = await toJpegBlob(file);
+                              setPhotos((prev) => [...prev, blob as File]);
                               const reader = new FileReader();
                               reader.onload = (ev) => {
                                 setPhotoPreviews((prev) => [...prev, ev.target?.result as string]);
                               };
-                              reader.readAsDataURL(file);
-                            });
-                            if (photoInputRef.current) photoInputRef.current.value = "";
+                              reader.readAsDataURL(blob);
+                            }
                           }}
                         />
                       </label>
