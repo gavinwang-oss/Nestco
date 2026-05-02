@@ -223,7 +223,7 @@ export async function POST(req: NextRequest) {
       for (const file of photoFiles.slice(0, 10)) {
         const path = `pending/${crypto.randomUUID()}.jpg`;
         const rawBuffer = Buffer.from(await file.arrayBuffer());
-        const buffer = await sharp(rawBuffer).jpeg({ quality: 85 }).toBuffer();
+        const buffer = await sharp(rawBuffer).resize({ width: 1920, withoutEnlargement: true }).jpeg({ quality: 80 }).toBuffer();
         const { error: uploadError } = await serviceClient.storage
           .from("listing-photos")
           .upload(path, buffer, { contentType: "image/jpeg", upsert: false });
