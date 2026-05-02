@@ -274,7 +274,7 @@ export async function POST(req: NextRequest) {
 
       const magicLink = linkData.properties?.action_link ?? "";
 
-      await fetch("https://api.resend.com/emails", {
+      const resendRes = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
@@ -313,6 +313,14 @@ export async function POST(req: NextRequest) {
           `,
         }),
       });
+
+      if (!resendRes.ok) {
+        const resendError = await resendRes.text();
+        console.error("Resend failed for lister email:", resendRes.status, resendError);
+        return NextResponse.json({
+          error: "Your listing was saved but we couldn't send the email. Please contact support@nestco.ai.",
+        }, { status: 500 });
+      }
     }
 
     return NextResponse.json({ success: true }, { status: 200 });
