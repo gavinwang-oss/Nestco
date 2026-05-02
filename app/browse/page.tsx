@@ -253,6 +253,13 @@ function ListingDetail({
   onMessage: () => void;
   onDraftMessage: () => void;
 }) {
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") setLightboxOpen(false); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [lightboxOpen]);
   const dragX = useMotionValue(0);
   const rotate = useTransform(dragX, [-220, 0, 220], [-10, 0, 10]);
   const saveOpacity = useTransform(dragX, [30, 120], [0, 1]);
@@ -337,10 +344,59 @@ function ListingDetail({
           </div>
         </motion.div>
 
+        {/* Lightbox */}
+        {lightboxOpen && listing.photos?.length > 0 && (
+          <div
+            className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center"
+            onClick={() => setLightboxOpen(false)}
+          >
+            <img
+              src={listing.photos[photoIndex]}
+              alt={listing.address}
+              className="max-h-screen max-w-screen object-contain"
+              onClick={(e) => e.stopPropagation()}
+            />
+            {listing.photos.length > 1 && (
+              <>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setPhotoIndex(photoIndex === 0 ? listing.photos.length - 1 : photoIndex - 1); }}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors cursor-pointer"
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 11L5 7L9 3" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setPhotoIndex(photoIndex === listing.photos.length - 1 ? 0 : photoIndex + 1); }}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors cursor-pointer"
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3L9 7L5 11" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                </button>
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
+                  {listing.photos.map((_, i) => (
+                    <button key={i} onClick={(e) => { e.stopPropagation(); setPhotoIndex(i); }}
+                      className={`w-2 h-2 rounded-full transition-all cursor-pointer ${i === photoIndex ? "bg-white" : "bg-white/40"}`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+            <button
+              onClick={() => setLightboxOpen(false)}
+              className="absolute top-4 right-4 w-9 h-9 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors cursor-pointer"
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 2l10 10M12 2L2 12" stroke="white" strokeWidth="1.8" strokeLinecap="round" /></svg>
+            </button>
+          </div>
+        )}
+
         {/* Photo */}
         <div className={`relative aspect-[16/9] ${listing.photos?.length > 0 ? "" : `bg-gradient-to-br ${GRADIENTS[listing.id % GRADIENTS.length]}`}`}>
           {listing.photos?.length > 0 && (
-            <img src={listing.photos[photoIndex]} alt={listing.address} className="w-full h-full object-cover" />
+            <img
+              src={listing.photos[photoIndex]}
+              alt={listing.address}
+              className="w-full h-full object-cover cursor-zoom-in"
+              onClick={() => setLightboxOpen(true)}
+            />
           )}
           <div className="absolute top-3 left-3 px-2.5 py-1 bg-black/70 backdrop-blur-sm rounded-full text-white text-xs font-medium">
             {formatType(listing.type)}
