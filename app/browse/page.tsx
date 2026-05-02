@@ -338,7 +338,7 @@ function ListingDetail({
         </motion.div>
 
         {/* Photo */}
-        <div className={`relative aspect-[4/3] ${listing.photos?.length > 0 ? "" : `bg-gradient-to-br ${GRADIENTS[listing.id % GRADIENTS.length]}`}`}>
+        <div className={`relative aspect-[16/9] ${listing.photos?.length > 0 ? "" : `bg-gradient-to-br ${GRADIENTS[listing.id % GRADIENTS.length]}`}`}>
           {listing.photos?.length > 0 && (
             <img src={listing.photos[photoIndex]} alt={listing.address} className="w-full h-full object-cover" />
           )}
