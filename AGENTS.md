@@ -36,9 +36,9 @@ Nestco is a UC Berkeley student sublet marketplace. Students can browse listings
 | `/auth/callback` | `app/auth/callback/page.tsx` | Auth callback — reads `?next=` param and redirects after SIGNED_IN. Uses both `onAuthStateChange` and `getSession()` fallback to fix race condition where SIGNED_IN fires before listener registers. |
 
 ## Key API routes
-- `app/api/chat/route.ts` — AI chat. Requires a Supabase Bearer token and rate limits to 30 messages/day per user. Takes `messages` plus optional selected listing context. The server fetches listings, saved IDs, and profile context directly from Supabase instead of trusting client-provided copies. Returns `{ content, rankedIds, scores, suggestedListingId, action, compareIds, draftContent }`. AI prompt instructs plain text only — no markdown formatting.
+- `app/api/chat/route.ts` — AI chat. Requires a Supabase Bearer token and rate limits to 30 messages/day per user. Takes `messages` plus optional selected listing context. The server fetches listings, saved IDs, and profile context directly from Supabase instead of trusting client-provided copies. Returns `{ content, rankedIds, scores, suggestedListingId, action, compareIds, draftContent }`. AI prompt instructs plain text only — no markdown formatting. The currently viewed listing is explicitly injected into the system prompt as "IMPORTANT: The user is currently viewing..." so the AI can answer follow-up questions about it without asking which listing the user means.
 - `app/api/match-requests/route.ts` — Called after a new listing is created. Requires Bearer token + ownership check. Scores all active requests against the listing using Claude and inserts into `notifications` table.
-- `app/api/waitlist/route.ts` — Two-step flow. Step 1: insert email → creates Supabase auth account via `admin.createUser` (email_confirm: true, no Supabase email sent) → sends "You're on the list!" branded email via Resend → returns `waitlist_id`. Only sends email on new entries (duplicate emails skip it). Step 2: accepts FormData (not JSON) with listing details + photo files. Uploads photos to `listing-photos/pending/`, saves to `pending_listings`, generates magic link via `admin.generateLink` (no Supabase email), sends branded "Publish your listing" email via Resend.
+- `app/api/waitlist/route.ts` — Two-step flow. Step 1: insert email → creates Supabase auth account via `admin.createUser` (email_confirm: true, no Supabase email sent) → sends "You're on the list!" branded email via Resend → returns `waitlist_id`. Only sends email on new entries (duplicate emails skip it). Every waitlist signup (finder or lister) gets a Supabase auth account created immediately at step 1. Step 2: accepts FormData (not JSON) with listing details + photo files. Photos are compressed server-side using `sharp` (resize to max 1920px wide, 80% JPEG quality) before uploading to `listing-photos/pending/`. Saves to `pending_listings`, generates magic link via `admin.generateLink` (no Supabase email), sends branded "Publish your listing" email via Resend.
 - `app/api/dev-login/route.ts` — Dev-only (returns 404 in production). POST with `{ email }` from hardcoded allowlist (`developer@nestco.edu`, `gavin_wang@berkeley.edu`). Returns a magic link URL without sending an email.
 - `app/api/activate-listing/route.ts` — Called from `/activate` with Bearer token. Finds pending listing by email, creates real listing in `listings` table, deletes from `pending_listings`.
 - `app/api/notify/message/route.ts` — Sends a "new message" email notification via Resend. Requires Bearer token. Looks up recipient email via service role, skips if sender === recipient. Fire-and-forget from the browse page when a message is sent.
@@ -132,6 +132,14 @@ Browse page and AI chat both filter out expired listings using `.or('available_t
 
 ### Photo reordering
 Both the landing page lister form and the EditModal in `/my-listings` support ←/→ buttons on photo thumbnails to reorder photos. First photo is labelled "Cover". Reorder swaps adjacent elements in both the `photos[]` URL array and `photoPreviews[]` display array.
+
+### Photo compression
+All photos are compressed before upload to handle large files (e.g. HEIC from iPhones, high-res camera shots) that would exceed Vercel's 4.5MB request limit. Two layers:
+- **Client-side** (`lib/imageUtils.ts` `toJpegBlob()`): resizes to max 1920px wide, 80% JPEG quality using canvas. Used in the landing page waitlist form and `/my-listings` edit modal.
+- **Server-side** (`app/api/waitlist/route.ts`): same resize/compress using `sharp` as a second pass on uploaded files. Do not remove either layer — they serve different upload paths.
+
+### Photo lightbox
+Clicking a photo in the detail panel opens a fullscreen lightbox overlay (`fixed inset-0 z-[9999]`). Arrow navigation, dot indicators, close via X button, click outside, or Escape key. Implemented directly inside the `DetailPanel` component in `app/browse/page.tsx` using local `lightboxOpen` state.
 
 ### Message sending flow
 1. User clicks "Ask AI to draft" on a listing detail panel → AI returns `draftContent`
