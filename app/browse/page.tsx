@@ -794,6 +794,12 @@ function BrowseContent() {
   const [compareMode, setCompareMode] = useState(false);
   const [compareQueue, setCompareQueue] = useState<Listing[]>([]);
   const [comparePicks, setComparePicks] = useState<Listing[]>([]);
+  const [pendingCompareIds, setPendingCompareIds] = useState<number[]>(() => {
+    if (typeof window === "undefined") return [];
+    const val = sessionStorage.getItem("nestco_compare");
+    if (val) { sessionStorage.removeItem("nestco_compare"); return val.split(",").map(Number).filter(Boolean); }
+    return [];
+  });
   const [mobileChatOpen, setMobileChatOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<HTMLInputElement>(null);
@@ -927,19 +933,16 @@ function BrowseContent() {
 
   // Activate compare mode if navigated here from saved page
   useEffect(() => {
-    if (listings.length === 0) return;
-    const compareParam = sessionStorage.getItem("nestco_compare");
-    if (!compareParam) return;
-    sessionStorage.removeItem("nestco_compare");
-    const ids = compareParam.split(",").map(Number).filter(Boolean);
-    const toCompare = ids.slice(0, 2).map((id) => listings.find((l) => l.id === id)).filter(Boolean) as Listing[];
+    if (pendingCompareIds.length !== 2 || listings.length === 0) return;
+    const toCompare = pendingCompareIds.map((id) => listings.find((l) => l.id === id)).filter(Boolean) as Listing[];
     if (toCompare.length === 2) {
       const queue = listings.filter((l) => !toCompare.some((c) => c.id === l.id));
       setCompareListings(toCompare);
       setCompareMode(true);
       setCompareQueue(queue);
+      setPendingCompareIds([]);
     }
-  }, [listings]);
+  }, [pendingCompareIds, listings]);
 
   const applyRankedIds = (rankedIds: number[], allListings: Listing[], scores: Record<number, number> = {}) => {
     if (!rankedIds?.length) return;
