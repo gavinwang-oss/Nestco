@@ -118,7 +118,7 @@ export default function Saved() {
                 <>
                   <button
                     onClick={() => { setCompareMode(false); setCompareSelected([]); }}
-                    className="px-4 py-2.5 min-h-[44px] text-sm font-semibold rounded-full border border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
+                    className="px-4 py-2.5 min-h-[44px] text-sm font-semibold rounded-full bg-white/60 backdrop-blur-sm border border-white/40 hover:bg-white/80 transition-colors cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -136,19 +136,11 @@ export default function Saved() {
               ) : (
                 <button
                   onClick={() => setCompareMode(true)}
-                  className="px-4 py-2.5 min-h-[44px] text-sm font-semibold rounded-full border border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
+                  className="px-4 py-2.5 min-h-[44px] text-sm font-semibold rounded-full bg-white/60 backdrop-blur-sm border border-white/40 hover:bg-white/80 transition-colors cursor-pointer"
                 >
                   Compare
                 </button>
               )
-            )}
-            {!compareMode && (
-              <button
-                onClick={() => router.push("/browse")}
-                className="px-4 py-2.5 min-h-[44px] bg-black text-white text-sm font-semibold rounded-full hover:bg-gray-800 transition-colors cursor-pointer"
-              >
-                Find more
-              </button>
             )}
           </div>
         </div>
