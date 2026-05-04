@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "nestco",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeExecutable": "/opt/homebrew/Cellar/node/25.9.0_1/bin/node",
+      "runtimeArgs": ["/Users/gavinwang/Documents/nestco/nestco/node_modules/.bin/next", "dev", "--cwd", "/Users/gavinwang/Documents/nestco/nestco"],
       "port": 3000
     }
   ]

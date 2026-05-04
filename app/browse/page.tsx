@@ -628,6 +628,18 @@ function ComparePanel({ listings, matchScores, savedIds, onToggleSave, onSelect,
   const getPhotoIndex = (id: number) => photoIndexes[id] ?? 0;
   const setPhotoIndex = (id: number, idx: number) =>
     setPhotoIndexes((prev) => ({ ...prev, [id]: idx }));
+  const [lightboxListing, setLightboxListing] = useState<Listing | null>(null);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+  useEffect(() => {
+    if (!lightboxListing) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setLightboxListing(null);
+      if (e.key === "ArrowLeft") setLightboxIndex((i) => Math.max(0, i - 1));
+      if (e.key === "ArrowRight") setLightboxIndex((i) => Math.min((lightboxListing.photos?.length ?? 1) - 1, i + 1));
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [lightboxListing]);
   const x0 = useMotionValue(0);
   const x1 = useMotionValue(0);
   const xs = [x0, x1];
@@ -693,7 +705,7 @@ function ComparePanel({ listings, matchScores, savedIds, onToggleSave, onSelect,
               <div className={`h-56 relative group/photo ${l.photos?.length ? "" : `bg-gradient-to-br ${gradient}`}`}>
                 {l.photos?.length ? (
                   <>
-                    <img src={l.photos[getPhotoIndex(l.id)]} alt={l.address} className="w-full h-full object-cover" />
+                    <img src={l.photos[getPhotoIndex(l.id)]} alt={l.address} className="w-full h-full object-cover cursor-zoom-in" onClick={() => { setLightboxListing(l); setLightboxIndex(getPhotoIndex(l.id)); }} />
                     {l.photos.length > 1 && (
                       <>
                         <button
@@ -762,6 +774,32 @@ function ComparePanel({ listings, matchScores, savedIds, onToggleSave, onSelect,
           );
         })}
       </div>
+      {lightboxListing && lightboxListing.photos?.length > 0 && (
+        <div className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center" onClick={() => setLightboxListing(null)}>
+          <button onClick={() => setLightboxListing(null)} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1.5 1.5l11 11M12.5 1.5l-11 11" stroke="white" strokeWidth="1.8" strokeLinecap="round"/></svg>
+          </button>
+          {lightboxIndex > 0 && (
+            <button onClick={(e) => { e.stopPropagation(); setLightboxIndex((i) => i - 1); }} className="absolute left-4 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 11L5 7L9 3" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
+          )}
+          {lightboxIndex < lightboxListing.photos.length - 1 && (
+            <button onClick={(e) => { e.stopPropagation(); setLightboxIndex((i) => i + 1); }} className="absolute right-4 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3L9 7L5 11" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
+          )}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={lightboxListing.photos[lightboxIndex]} alt="" className="max-h-[90vh] max-w-[90vw] object-contain" onClick={(e) => e.stopPropagation()} />
+          {lightboxListing.photos.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
+              {lightboxListing.photos.map((_, pi) => (
+                <div key={pi} className={`w-1.5 h-1.5 rounded-full transition-all ${pi === lightboxIndex ? "bg-white" : "bg-white/30"}`} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -940,7 +978,7 @@ function BrowseContent() {
     if (pendingCompareIds.length !== 2 || listings.length === 0) return;
     const toCompare = pendingCompareIds.map((id) => listings.find((l) => l.id === id)).filter(Boolean) as Listing[];
     if (toCompare.length === 2) {
-      const queue = listings.filter((l) => !toCompare.some((c) => c.id === l.id));
+      const queue = listings.filter((l) => savedIds.has(l.id) && !toCompare.some((c) => c.id === l.id));
       setCompareListings(toCompare);
       setCompareMode(true);
       setCompareQueue(queue);
