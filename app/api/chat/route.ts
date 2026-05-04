@@ -10,6 +10,7 @@ const MAX_MESSAGE_LENGTH = 2_000;
 
 type Listing = {
   id: number;
+  title: string | null;
   type: string;
   address: string;
   price: number;
