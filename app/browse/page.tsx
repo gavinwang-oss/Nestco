@@ -925,10 +925,12 @@ function BrowseContent() {
     }
   }, [searchParams, listings]);
 
-  // Activate compare mode from URL param (e.g. /browse?compare=id1,id2)
+  // Activate compare mode if navigated here from saved page
   useEffect(() => {
-    const compareParam = searchParams.get("compare");
-    if (!compareParam || listings.length === 0) return;
+    if (listings.length === 0) return;
+    const compareParam = sessionStorage.getItem("nestco_compare");
+    if (!compareParam) return;
+    sessionStorage.removeItem("nestco_compare");
     const ids = compareParam.split(",").map(Number).filter(Boolean);
     const toCompare = ids.slice(0, 2).map((id) => listings.find((l) => l.id === id)).filter(Boolean) as Listing[];
     if (toCompare.length === 2) {
@@ -936,9 +938,8 @@ function BrowseContent() {
       setCompareListings(toCompare);
       setCompareMode(true);
       setCompareQueue(queue);
-      router.replace("/browse", { scroll: false });
     }
-  }, [searchParams, listings, router]);
+  }, [listings]);
 
   const applyRankedIds = (rankedIds: number[], allListings: Listing[], scores: Record<number, number> = {}) => {
     if (!rankedIds?.length) return;

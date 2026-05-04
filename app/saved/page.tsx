@@ -124,7 +124,10 @@ export default function Saved() {
                   </button>
                   <button
                     disabled={compareSelected.length !== 2}
-                    onClick={() => router.push(`/browse?compare=${compareSelected.join(",")}`)}
+                    onClick={() => {
+                      sessionStorage.setItem("nestco_compare", compareSelected.join(","));
+                      router.push("/browse");
+                    }}
                     className="px-4 py-2.5 min-h-[44px] bg-black text-white text-sm font-semibold rounded-full hover:bg-gray-800 transition-colors cursor-pointer disabled:opacity-40"
                   >
                     Compare
