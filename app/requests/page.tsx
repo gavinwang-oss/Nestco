@@ -59,22 +59,15 @@ function RequestCard({
 }: {
   req: Request;
   isOwner: boolean;
-  onRemove: (id: number) => void;
+  onRemove: (id: number) => Promise<void>;
   onMessage?: () => void;
 }) {
   const [removing, setRemoving] = useState(false);
 
   const handleRemove = async () => {
     setRemoving(true);
-    const { error } = await supabase
-      .from("requests")
-      .update({ is_active: false })
-      .eq("id", req.id);
-    if (!error) {
-      onRemove(req.id);
-    } else {
-      setRemoving(false);
-    }
+    await onRemove(req.id);
+    setRemoving(false);
   };
 
   return (
@@ -513,8 +506,15 @@ export default function RequestsPage() {
     });
   }, [user]);
 
-  const handleRemove = (id: number) => {
-    setRequests((prev) => prev.filter((r) => r.id !== id));
+  const handleRemove = async (id: number) => {
+    const { error } = await supabase
+      .from("requests")
+      .update({ is_active: false })
+      .eq("id", id)
+      .eq("user_id", user!.id);
+    if (!error) {
+      setRequests((prev) => prev.filter((r) => r.id !== id));
+    }
   };
 
   const handleSuccess = () => {
