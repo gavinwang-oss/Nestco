@@ -944,6 +944,7 @@ function BrowseContent() {
       setCompareListings(toCompare);
       setCompareMode(true);
       setCompareQueue(queue);
+      setHasSearched(true);
       setPendingCompareIds([]);
     }
   }, [pendingCompareIds, listings]);
