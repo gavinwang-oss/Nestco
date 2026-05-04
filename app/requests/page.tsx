@@ -574,12 +574,14 @@ export default function RequestsPage() {
   }, [user]);
 
   const handleRemove = async (id: number) => {
-    const { error } = await supabase
-      .from("requests")
-      .update({ is_active: false })
-      .eq("id", id)
-      .eq("user_id", user!.id);
-    if (!error) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) return;
+    const res = await fetch("/api/requests", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${session.access_token}` },
+      body: JSON.stringify({ requestId: id }),
+    });
+    if (res.ok) {
       setRequests((prev) => prev.filter((r) => r.id !== id));
     }
   };
