@@ -690,7 +690,7 @@ function ComparePanel({ listings, matchScores, savedIds, onToggleSave, onSelect,
                   {compareQueue.length > 0 ? `Swipe left to swap · ${compareQueue.length} in queue` : "Swipe left to remove"}
                 </span>
               </motion.div>
-              <div className={`aspect-[4/3] relative group/photo ${l.photos?.length ? "" : `bg-gradient-to-br ${gradient}`}`}>
+              <div className={`h-56 relative group/photo ${l.photos?.length ? "" : `bg-gradient-to-br ${gradient}`}`}>
                 {l.photos?.length ? (
                   <>
                     <img src={l.photos[getPhotoIndex(l.id)]} alt={l.address} className="w-full h-full object-cover" />
@@ -946,6 +946,7 @@ function BrowseContent() {
       setCompareQueue(queue);
       setHasSearched(true);
       setPendingCompareIds([]);
+      setMessages([{ role: "ai", content: `Comparing ${toCompare[0].title ?? toCompare[0].address} and ${toCompare[1].title ?? toCompare[1].address}. Ask me anything about these two listings!` }]);
     }
   }, [pendingCompareIds, listings]);
 
