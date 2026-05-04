@@ -828,6 +828,7 @@ function BrowseContent() {
   const [editingDraftKey, setEditingDraftKey] = useState<string | null>(null);
   const [editingDraftText, setEditingDraftText] = useState("");
   const [savedIds, setSavedIds] = useState<Set<number>>(new Set());
+  const [savedIdsLoaded, setSavedIdsLoaded] = useState(false);
   const [compareListings, setCompareListings] = useState<Listing[]>([]);
   const [compareMode, setCompareMode] = useState(false);
   const [compareQueue, setCompareQueue] = useState<Listing[]>([]);
@@ -878,6 +879,7 @@ function BrowseContent() {
       .eq("user_id", user.id)
       .then(({ data }) => {
         if (data) setSavedIds(new Set(data.map((r) => r.listing_id)));
+        setSavedIdsLoaded(true);
       });
   }, [user]);
 
@@ -943,9 +945,6 @@ function BrowseContent() {
     if (next) {
       setCompareListings([...remaining, next]);
       setCompareQueue((prev) => prev.slice(1));
-    } else if (remaining.length === 1) {
-      setComparePicks(remaining);
-      setCompareListings([]);
     } else {
       exitCompareMode();
     }
@@ -973,9 +972,9 @@ function BrowseContent() {
     }
   }, []);
 
-  // Activate compare mode once both IDs and listings are ready
+  // Activate compare mode once both IDs, listings, and savedIds are ready
   useEffect(() => {
-    if (pendingCompareIds.length !== 2 || listings.length === 0) return;
+    if (pendingCompareIds.length !== 2 || listings.length === 0 || !savedIdsLoaded) return;
     const toCompare = pendingCompareIds.map((id) => listings.find((l) => l.id === id)).filter(Boolean) as Listing[];
     if (toCompare.length === 2) {
       const queue = listings.filter((l) => savedIds.has(l.id) && !toCompare.some((c) => c.id === l.id));
@@ -986,7 +985,7 @@ function BrowseContent() {
       setPendingCompareIds([]);
       setMessages([{ role: "ai", content: `Comparing ${toCompare[0].title ?? toCompare[0].address} and ${toCompare[1].title ?? toCompare[1].address}. Ask me anything about these two listings!` }]);
     }
-  }, [pendingCompareIds, listings]);
+  }, [pendingCompareIds, listings, savedIdsLoaded, savedIds]);
 
   const applyRankedIds = (rankedIds: number[], allListings: Listing[], scores: Record<number, number> = {}) => {
     if (!rankedIds?.length) return;
