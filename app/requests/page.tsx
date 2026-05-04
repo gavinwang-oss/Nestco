@@ -3,9 +3,12 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
+
+type MyListing = { id: number; title: string | null; address: string };
 
 type Request = {
   id: number;
@@ -52,10 +55,12 @@ function RequestCard({
   req,
   isOwner,
   onRemove,
+  onMessage,
 }: {
   req: Request;
   isOwner: boolean;
   onRemove: (id: number) => void;
+  onMessage?: () => void;
 }) {
   const [removing, setRemoving] = useState(false);
 
@@ -147,10 +152,17 @@ function RequestCard({
         <p className="text-[11px] text-gray-400">
           Expires {formatDate(req.expires_at)}
         </p>
-        {isOwner && (
+        {isOwner ? (
           <p className="text-[11px] text-gray-400 truncate max-w-[160px]">
             {req.user_email}
           </p>
+        ) : onMessage && (
+          <button
+            onClick={onMessage}
+            className="px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-200 rounded-full hover:bg-gray-50 transition-colors cursor-pointer"
+          >
+            Message
+          </button>
         )}
       </div>
     </motion.div>
@@ -386,11 +398,86 @@ function RequestFormModal({ onClose, onSuccess }: { onClose: () => void; onSucce
   );
 }
 
+function MessageModal({
+  recipient_id,
+  myListings,
+  onClose,
+  onSent,
+}: {
+  recipient_id: string;
+  myListings: MyListing[];
+  onClose: () => void;
+  onSent: () => void;
+}) {
+  const [selectedListingId, setSelectedListingId] = useState<number | null>(myListings[0]?.id ?? null);
+  const [text, setText] = useState("");
+  const [sending, setSending] = useState(false);
+  const { user } = useAuth();
+
+  const handleSend = async () => {
+    if (!user || !selectedListingId || !text.trim()) return;
+    setSending(true);
+    await supabase.from("messages").insert({
+      sender_id: user.id,
+      recipient_id,
+      listing_id: selectedListingId,
+      content: text.trim(),
+    });
+    setSending(false);
+    onSent();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="w-full max-w-md bg-white sm:rounded-3xl rounded-t-3xl shadow-xl overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <h2 className="text-base font-semibold text-gray-950">Message about a listing</h2>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors cursor-pointer">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="#374151" strokeWidth="1.8" strokeLinecap="round"/></svg>
+          </button>
+        </div>
+        <div className="p-6 flex flex-col gap-4">
+          {myListings.length === 0 ? (
+            <div className="text-center py-4">
+              <p className="text-sm text-gray-500 mb-3">You need a listing to message this person.</p>
+              <Link href="/create" className="px-4 py-2 bg-black text-white text-sm font-semibold rounded-full">Create a listing</Link>
+            </div>
+          ) : (
+            <>
+              <div>
+                <label className="text-xs font-medium text-gray-500 mb-1.5 block">Which listing are you reaching out about?</label>
+                <select value={selectedListingId ?? ""} onChange={(e) => setSelectedListingId(Number(e.target.value))}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-black/10">
+                  {myListings.map((l) => (
+                    <option key={l.id} value={l.id}>{l.title ?? l.address}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-gray-500 mb-1.5 block">Message</label>
+                <textarea value={text} onChange={(e) => setText(e.target.value)} rows={3} placeholder="Hi! I think my place might be a good fit..."
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-black/10 resize-none" />
+              </div>
+              <button onClick={handleSend} disabled={sending || !text.trim()}
+                className="w-full py-3 bg-black text-white text-sm font-semibold rounded-full hover:bg-gray-800 transition-colors cursor-pointer disabled:opacity-50">
+                {sending ? "Sending..." : "Send message"}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function RequestsPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const [requests, setRequests] = useState<Request[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [myListings, setMyListings] = useState<MyListing[]>([]);
+  const [messageTarget, setMessageTarget] = useState<string | null>(null);
 
   const fetchRequests = async () => {
     const { data, error } = await supabase
@@ -409,6 +496,13 @@ export default function RequestsPage() {
   useEffect(() => {
     fetchRequests();
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("listings").select("id, title, address").eq("user_id", user.id).then(({ data }) => {
+      if (data) setMyListings(data);
+    });
+  }, [user]);
 
   const handleRemove = (id: number) => {
     setRequests((prev) => prev.filter((r) => r.id !== id));
@@ -492,6 +586,7 @@ export default function RequestsPage() {
                   req={req}
                   isOwner={user?.id === req.user_id}
                   onRemove={handleRemove}
+                  onMessage={user && user.id !== req.user_id ? () => setMessageTarget(req.user_id) : undefined}
                 />
               ))}
             </AnimatePresence>
@@ -508,6 +603,15 @@ export default function RequestsPage() {
           />
         )}
       </AnimatePresence>
+
+      {messageTarget && (
+        <MessageModal
+          recipient_id={messageTarget}
+          myListings={myListings}
+          onClose={() => setMessageTarget(null)}
+          onSent={() => { setMessageTarget(null); router.push("/inbox"); }}
+        />
+      )}
     </div>
   );
 }
