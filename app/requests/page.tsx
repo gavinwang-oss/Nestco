@@ -166,6 +166,8 @@ function RequestFormModal({ onClose, onSuccess }: { onClose: () => void; onSucce
   const { user } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [matchCount, setMatchCount] = useState<number | null>(null);
+  const [matchListingIds, setMatchListingIds] = useState<number[]>([]);
 
   const [description, setDescription] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
@@ -213,10 +215,40 @@ function RequestFormModal({ onClose, onSuccess }: { onClose: () => void; onSucce
     setSubmitting(false);
     if (insertError) {
       setError(insertError.message);
-    } else {
-      onSuccess();
-      onClose();
+      return;
     }
+
+    onSuccess();
+
+    // Scan existing listings for matches
+    const { data: newReq } = await supabase
+      .from("requests")
+      .select("id")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (newReq) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        setSubmitting(true); // reuse to show scanning state
+        const res = await fetch("/api/match-listings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${session.access_token}` },
+          body: JSON.stringify({ requestId: newReq.id }),
+        });
+        setSubmitting(false);
+        if (res.ok) {
+          const data = await res.json() as { matched: number; listingIds: number[] };
+          setMatchCount(data.matched);
+          setMatchListingIds(data.listingIds);
+          return; // keep modal open to show results
+        }
+      }
+    }
+
+    onClose();
   };
 
   return (
@@ -235,6 +267,40 @@ function RequestFormModal({ onClose, onSuccess }: { onClose: () => void; onSucce
         className="w-full max-w-lg bg-white sm:rounded-3xl rounded-t-3xl border border-black/[0.06] shadow-xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Results screen */}
+        {matchCount !== null ? (
+          <div className="p-8 flex flex-col items-center text-center gap-4">
+            <div className="text-4xl">{matchCount > 0 ? "🎯" : "📋"}</div>
+            <h2 className="text-lg font-bold text-gray-950">
+              {matchCount > 0 ? `${matchCount} existing listing${matchCount !== 1 ? "s" : ""} match your request!` : "No matches yet"}
+            </h2>
+            <p className="text-sm text-gray-500">
+              {matchCount > 0
+                ? "We've notified the listers. You can browse the matches now, or we'll email you as new ones are posted."
+                : "We'll email you as soon as a matching listing is posted."}
+            </p>
+            <div className="flex gap-3 mt-2">
+              {matchCount > 0 && (
+                <Link
+                  href={`/browse?listings=${matchListingIds.join(",")}`}
+                  onClick={onClose}
+                  className="px-5 py-2.5 bg-black text-white text-sm font-semibold rounded-full hover:bg-gray-800 transition-colors"
+                >
+                  Browse matches
+                </Link>
+              )}
+              <button onClick={onClose} className="px-5 py-2.5 text-sm font-semibold rounded-full border border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer">
+                Done
+              </button>
+            </div>
+          </div>
+        ) : submitting ? (
+          <div className="p-8 flex flex-col items-center text-center gap-3">
+            <div className="w-6 h-6 border-2 border-black border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm text-gray-500">Scanning existing listings for matches…</p>
+          </div>
+        ) : (<>
+
         {/* Modal header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <div>
@@ -386,6 +452,7 @@ function RequestFormModal({ onClose, onSuccess }: { onClose: () => void; onSucce
             {submitting ? "Posting..." : "Post request"}
           </button>
         </form>
+        </>)}
       </motion.div>
     </motion.div>
   );

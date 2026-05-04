@@ -144,6 +144,32 @@ Pets required: ${request.pets != null ? (request.pets ? "Yes" : "No") : "Not spe
             reason,
             read: false,
           });
+          // Email the requester
+          if (request.user_email) {
+            const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.nestco.ai";
+            const listingLabel = listing.title ?? listing.address;
+            fetch("https://api.resend.com/emails", {
+              method: "POST",
+              headers: { "Authorization": `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
+              body: JSON.stringify({
+                from: "Nestco <noreply@nestco.ai>",
+                to: request.user_email,
+                subject: "A new listing matches your request on Nestco",
+                html: `
+                  <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 24px; background: #ffffff;">
+                    <table cellpadding="0" cellspacing="0" style="margin-bottom: 32px;"><tr>
+                      <td style="width: 32px; height: 32px; background: #000; border-radius: 8px; text-align: center; vertical-align: middle;"><span style="color: white; font-size: 14px; font-weight: 700; line-height: 32px;">N</span></td>
+                      <td style="padding-left: 10px; font-size: 17px; font-weight: 600; color: #111; vertical-align: middle;">nestco</td>
+                    </tr></table>
+                    <h1 style="font-size: 22px; font-weight: 700; color: #0f0f0f; margin: 0 0 8px;">New listing match</h1>
+                    <p style="font-size: 15px; color: #555; margin: 0 0 8px; line-height: 1.5;">A new listing matches your housing request: <strong>${listingLabel}</strong></p>
+                    <p style="font-size: 14px; color: #777; margin: 0 0 28px; line-height: 1.5;">${reason}</p>
+                    <a href="${appUrl}/browse?listing=${listing.id}" style="display: inline-block; background: #000; color: #fff; text-decoration: none; font-size: 14px; font-weight: 600; padding: 12px 24px; border-radius: 100px;">View listing →</a>
+                    <p style="font-size: 12px; color: #aaa; margin-top: 40px;"><a href="${appUrl}" style="color: #aaa;">nestco.ai</a></p>
+                  </div>`,
+              }),
+            }).catch(() => {});
+          }
         }
       } catch (err) {
         console.error(`Error scoring request ${request.id}:`, err);
