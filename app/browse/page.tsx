@@ -794,12 +794,7 @@ function BrowseContent() {
   const [compareMode, setCompareMode] = useState(false);
   const [compareQueue, setCompareQueue] = useState<Listing[]>([]);
   const [comparePicks, setComparePicks] = useState<Listing[]>([]);
-  const [pendingCompareIds, setPendingCompareIds] = useState<number[]>(() => {
-    if (typeof window === "undefined") return [];
-    const val = sessionStorage.getItem("nestco_compare");
-    if (val) { sessionStorage.removeItem("nestco_compare"); return val.split(",").map(Number).filter(Boolean); }
-    return [];
-  });
+  const [pendingCompareIds, setPendingCompareIds] = useState<number[]>([]);
   const [mobileChatOpen, setMobileChatOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<HTMLInputElement>(null);
@@ -931,7 +926,16 @@ function BrowseContent() {
     }
   }, [searchParams, listings]);
 
-  // Activate compare mode if navigated here from saved page
+  // Read compare IDs from sessionStorage on client mount
+  useEffect(() => {
+    const val = sessionStorage.getItem("nestco_compare");
+    if (val) {
+      sessionStorage.removeItem("nestco_compare");
+      setPendingCompareIds(val.split(",").map(Number).filter(Boolean));
+    }
+  }, []);
+
+  // Activate compare mode once both IDs and listings are ready
   useEffect(() => {
     if (pendingCompareIds.length !== 2 || listings.length === 0) return;
     const toCompare = pendingCompareIds.map((id) => listings.find((l) => l.id === id)).filter(Boolean) as Listing[];
