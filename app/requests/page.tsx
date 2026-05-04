@@ -417,12 +417,21 @@ function MessageModal({
   const handleSend = async () => {
     if (!user || !selectedListingId || !text.trim()) return;
     setSending(true);
+    const listing = myListings.find((l) => l.id === selectedListingId);
     await supabase.from("messages").insert({
       sender_id: user.id,
       recipient_id,
       listing_id: selectedListingId,
       content: text.trim(),
     });
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.access_token) {
+      fetch("/api/notify/message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${session.access_token}` },
+        body: JSON.stringify({ recipient_id, listing_id: selectedListingId, listing_title: listing?.title, listing_address: listing?.address }),
+      }).catch(() => {});
+    }
     setSending(false);
     onSent();
   };
