@@ -44,7 +44,7 @@ const GRADIENTS = [
 const BG = {
   backgroundImage: `url('/sb1.png')`,
     backgroundSize: "cover",
-    backgroundPosition: "center",
+    backgroundPosition: "center", backgroundAttachment: "fixed",
 };
 
 export default function Saved() {

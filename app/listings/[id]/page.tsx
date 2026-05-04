@@ -58,7 +58,7 @@ export default function ListingDetail() {
     return (
       <div
         className="min-h-screen flex flex-col"
-        style={{ backgroundImage: `url('/sb1.png')`, backgroundSize: "cover", backgroundPosition: "center" }}
+        style={{ backgroundImage: `url('/sb1.png')`, backgroundSize: "cover", backgroundPosition: "center", backgroundAttachment: "fixed" }}
       >
         <Navbar />
         <div className="flex-1 flex items-center justify-center">
@@ -72,7 +72,7 @@ export default function ListingDetail() {
     return (
       <div
         className="min-h-screen flex flex-col"
-        style={{ backgroundImage: `url('/sb1.png')`, backgroundSize: "cover", backgroundPosition: "center" }}
+        style={{ backgroundImage: `url('/sb1.png')`, backgroundSize: "cover", backgroundPosition: "center", backgroundAttachment: "fixed" }}
       >
         <Navbar />
         <div className="flex-1 flex items-center justify-center">
@@ -111,7 +111,7 @@ export default function ListingDetail() {
       style={{
         backgroundImage: `url('/sb1.png')`,
         backgroundSize: "cover",
-        backgroundPosition: "center",
+        backgroundPosition: "center", backgroundAttachment: "fixed",
       }}
     >
       <Navbar />

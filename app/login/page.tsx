@@ -44,7 +44,7 @@ export default function Login() {
       style={{
         backgroundImage: `url('/sb1.png')`,
     backgroundSize: "cover",
-    backgroundPosition: "center",
+    backgroundPosition: "center", backgroundAttachment: "fixed",
       }}
     >
       <div className="w-full max-w-sm bg-white rounded-3xl border border-black/[0.06] shadow-sm p-8">

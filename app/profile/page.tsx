@@ -8,7 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 const bgStyle = {
   backgroundImage: `url('/sb1.png')`,
     backgroundSize: "cover",
-    backgroundPosition: "center",
+    backgroundPosition: "center", backgroundAttachment: "fixed",
 };
 
 export default function ProfilePage() {

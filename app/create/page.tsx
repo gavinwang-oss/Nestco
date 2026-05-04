@@ -248,7 +248,7 @@ export default function Create() {
       style={{
         backgroundImage: `url('/sb1.png')`,
     backgroundSize: "cover",
-    backgroundPosition: "center",
+    backgroundPosition: "center", backgroundAttachment: "fixed",
       }}
     >
       <Navbar />

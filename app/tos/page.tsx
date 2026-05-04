@@ -4,7 +4,7 @@ import Navbar from "@/components/Navbar";
 const bgStyle = {
   backgroundImage: `url('/sb1.png')`,
     backgroundSize: "cover",
-    backgroundPosition: "center",
+    backgroundPosition: "center", backgroundAttachment: "fixed",
 };
 
 export default function TermsOfServicePage() {

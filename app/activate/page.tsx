@@ -64,7 +64,7 @@ export default function ActivatePage() {
       style={{
         backgroundImage: `url('/sb1.png')`,
     backgroundSize: "cover",
-    backgroundPosition: "center",
+    backgroundPosition: "center", backgroundAttachment: "fixed",
       }}
     >
       <div className="w-full max-w-md bg-white rounded-3xl border border-black/[0.06] shadow-sm p-10 text-center">

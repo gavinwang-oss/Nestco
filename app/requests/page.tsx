@@ -421,7 +421,7 @@ export default function RequestsPage() {
   return (
     <div
       className="min-h-screen flex flex-col"
-      style={{ backgroundImage: `url('/sb1.png')`, backgroundSize: "cover", backgroundPosition: "center" }}
+      style={{ backgroundImage: `url('/sb1.png')`, backgroundSize: "cover", backgroundPosition: "center", backgroundAttachment: "fixed" }}
     >
       <Navbar />
 

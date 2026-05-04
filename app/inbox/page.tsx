@@ -453,7 +453,7 @@ export default function Inbox() {
   const bgStyle = {
     backgroundImage: `url('/sb1.png')`,
     backgroundSize: "cover",
-    backgroundPosition: "center",
+    backgroundPosition: "center", backgroundAttachment: "fixed",
   };
 
   if (loading || fetching) {
