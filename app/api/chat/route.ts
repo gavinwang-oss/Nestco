@@ -138,7 +138,7 @@ function buildListingSummary(listings: Listing[]): string {
   return listings
     .map(
       (listing) =>
-        `ID ${listing.id}: ${listing.type} at ${listing.address}, $${listing.price}/mo` +
+        `ID ${listing.id}: ${listing.title ? `"${listing.title}" (` : ""}${listing.type} at ${listing.address}${listing.title ? ")" : ""}, $${listing.price}/mo` +
         (listing.utilities_included ? " (utilities incl.)" : "") +
         `, available ${listing.available_from}${listing.available_to ? ` to ${listing.available_to}` : ""}` +
         `, ${listing.furnished ? "furnished" : "unfurnished"}` +
@@ -269,7 +269,7 @@ Rules:
 - For gender, distinguish who can move in from the gender of existing roommates. Only use listing fields provided above. Do not infer or recommend based on race, ethnicity, religion, national origin, or other protected characteristics.
 - Keep content to 2-4 sentences. Do not list every listing in content; the UI shows listing cards. Never use markdown formatting (no **bold**, no bullet points with -, no headers) — plain text only.
 - For message drafts, do not include the user's name. Use this exact format when profile data is available: "Hey, I'm a [age]-year-old [gender] [year] [major] student interested in your place. [One short relevant detail if it fits naturally.] I'd love to come check it out — when works?" Include age, year, and major always. Only include [gender] if the user's gender is provided and is not "prefer not to say" — if gender is missing or prefer-not-to-say, drop it entirely and do not leave a grammatical gap (e.g. "I'm a 21-year-old junior" not "I'm a 21-year-old  junior"). Never include race, ethnicity, cultural background, religion, or national origin.
-- When asked about listings, refer to specific ones by address and price.
+- When asked about listings, refer to specific ones by their title if they have one, otherwise by address and price.
 - Stay focused on housing and redirect off-topic questions.
 - Never mention listing IDs to the user.
 

@@ -925,6 +925,21 @@ function BrowseContent() {
     }
   }, [searchParams, listings]);
 
+  // Activate compare mode from URL param (e.g. /browse?compare=id1,id2)
+  useEffect(() => {
+    const compareParam = searchParams.get("compare");
+    if (!compareParam || listings.length === 0) return;
+    const ids = compareParam.split(",").map(Number).filter(Boolean);
+    const toCompare = ids.slice(0, 2).map((id) => listings.find((l) => l.id === id)).filter(Boolean) as Listing[];
+    if (toCompare.length === 2) {
+      const queue = listings.filter((l) => !toCompare.some((c) => c.id === l.id));
+      setCompareListings(toCompare);
+      setCompareMode(true);
+      setCompareQueue(queue);
+      router.replace("/browse", { scroll: false });
+    }
+  }, [searchParams, listings, router]);
+
   const applyRankedIds = (rankedIds: number[], allListings: Listing[], scores: Record<number, number> = {}) => {
     if (!rankedIds?.length) return;
     const idMap = new Map(allListings.map((l) => [l.id, l]));
