@@ -1,19 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthModal, { AuthTab } from "@/components/AuthModal";
 import { isAdminEmail } from "@/lib/admin";
+import { supabase } from "@/lib/supabase";
 
 export default function Navbar() {
   const { user, loading, signOut } = useAuth();
   const [authOpen, setAuthOpen] = useState(false);
   const [authTab, setAuthTab] = useState<AuthTab>("login");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const isAdmin = isAdminEmail(user?.email);
   const pathname = usePathname();
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("notifications")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .eq("read", false)
+      .then(({ count }) => setUnreadCount(count ?? 0));
+  }, [user, pathname]);
 
   const openAuth = (tab: AuthTab) => {
     setAuthTab(tab);
@@ -22,19 +34,24 @@ export default function Navbar() {
 
   const initials = user?.email?.[0].toUpperCase() ?? "?";
 
-  const navLink = (href: string, label: string) => {
+  const navLink = (href: string, label: string, badge?: number) => {
     const active = pathname === href || (href !== "/browse" && pathname.startsWith(href));
     return (
       <Link
         href={href}
         onClick={() => setMobileMenuOpen(false)}
-        className={`px-3 py-1.5 rounded-lg text-sm transition-all ${
+        className={`relative px-3 py-1.5 rounded-lg text-sm transition-all ${
           active
             ? "text-gray-900 bg-black/[0.06] font-medium"
             : "text-gray-500 hover:text-gray-900 hover:bg-black/[0.04]"
         }`}
       >
         {label}
+        {badge != null && badge > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 bg-black text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+            {badge > 9 ? "9+" : badge}
+          </span>
+        )}
       </Link>
     );
   };
@@ -78,7 +95,7 @@ export default function Navbar() {
                 {isAdmin && navLink("/requests", "Requests")}
                 {navLink("/my-listings", "My listings")}
                 {isAdmin && navLink("/saved", "Saved")}
-                {isAdmin && navLink("/inbox", "Inbox")}
+                {isAdmin && navLink("/inbox", "Inbox", unreadCount)}
 
                 {/* Divider */}
                 <div className="w-px h-4 bg-black/[0.08] mx-2" />
@@ -199,8 +216,13 @@ export default function Navbar() {
                   Saved
                 </Link>
                 <Link href="/inbox" onClick={() => setMobileMenuOpen(false)}
-                  className={`px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${pathname === "/inbox" ? "bg-black/[0.06] text-gray-900" : "text-gray-600 hover:bg-black/[0.04]"}`}>
+                  className={`relative px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${pathname === "/inbox" ? "bg-black/[0.06] text-gray-900" : "text-gray-600 hover:bg-black/[0.04]"}`}>
                   Inbox
+                  {unreadCount > 0 && (
+                    <span className="absolute top-2 right-2 min-w-[16px] h-4 px-1 bg-black text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
                 </Link>
                 <Link href="/profile" onClick={() => setMobileMenuOpen(false)}
                   className={`px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${pathname === "/profile" ? "bg-black/[0.06] text-gray-900" : "text-gray-600 hover:bg-black/[0.04]"}`}>

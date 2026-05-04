@@ -692,35 +692,40 @@ export default function Inbox() {
             </div>
           ) : (
             <div className="flex flex-col gap-3">
-              {notifications.map((notif) => (
-                <Link
-                  key={notif.id}
-                  href={`/browse?listing=${notif.listing_id}`}
-                  className={`block bg-white rounded-2xl border shadow-sm p-5 hover:shadow-md transition-all ${notif.read ? "border-black/[0.06]" : "border-black/[0.12]"}`}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        {!notif.read && <span className="w-2 h-2 rounded-full bg-black flex-shrink-0" />}
-                        <span className="text-xs text-gray-400 uppercase tracking-wide font-medium">New match for your request</span>
+              {notifications.map((notif) => {
+                const isRequestMatch = notif.type === "request_match";
+                return (
+                  <Link
+                    key={notif.id}
+                    href={isRequestMatch ? "/requests" : `/browse?listing=${notif.listing_id}`}
+                    className={`block bg-white rounded-2xl border shadow-sm p-5 hover:shadow-md transition-all ${notif.read ? "border-black/[0.06]" : "border-black/[0.12]"}`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          {!notif.read && <span className="w-2 h-2 rounded-full bg-black flex-shrink-0" />}
+                          <span className="text-xs text-gray-400 uppercase tracking-wide font-medium">
+                            {isRequestMatch ? "Student looking for a place like yours" : "New match for your request"}
+                          </span>
+                        </div>
+                        <p className="text-base font-semibold text-gray-900 truncate">
+                          {notif.listing?.title ?? notif.listing?.address ?? `Listing #${notif.listing_id}`}
+                        </p>
+                        <p className="text-sm text-gray-500 mt-0.5 capitalize">
+                          {notif.listing?.type} · ${notif.listing?.price?.toLocaleString()}/mo
+                        </p>
+                        {notif.reason && <p className="text-sm text-gray-500 mt-2 leading-relaxed">{notif.reason}</p>}
                       </div>
-                      <p className="text-base font-semibold text-gray-900 truncate">
-                        {notif.listing?.title ?? notif.listing?.address ?? `Listing #${notif.listing_id}`}
-                      </p>
-                      <p className="text-sm text-gray-500 mt-0.5 capitalize">
-                        {notif.listing?.type} · ${notif.listing?.price?.toLocaleString()}/mo
-                      </p>
-                      {notif.reason && <p className="text-sm text-gray-500 mt-2 leading-relaxed">{notif.reason}</p>}
+                      <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${notif.score >= 80 ? "bg-green-100 text-green-700" : notif.score >= 65 ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-600"}`}>
+                          {notif.score}% match
+                        </span>
+                        <span className="text-xs text-gray-400">{formatTimestamp(notif.created_at)}</span>
+                      </div>
                     </div>
-                    <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${notif.score >= 80 ? "bg-green-100 text-green-700" : notif.score >= 65 ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-600"}`}>
-                        {notif.score}% match
-                      </span>
-                      <span className="text-xs text-gray-400">{formatTimestamp(notif.created_at)}</span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                );
+              })}
             </div>
           )
         )}
