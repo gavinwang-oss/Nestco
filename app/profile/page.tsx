@@ -175,6 +175,8 @@ export default function ProfilePage() {
                 type="number"
                 value={age}
                 onChange={(e) => setAge(e.target.value)}
+                min={18}
+                onKeyDown={(e) => ["e","E","+","-"].includes(e.key) && e.preventDefault()}
                 className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-gray-50 text-sm outline-none focus:ring-2 focus:ring-black/10"
               />
               <select

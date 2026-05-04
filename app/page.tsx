@@ -441,6 +441,8 @@ export default function Home() {
                         type="number"
                         value={price}
                         onChange={(e) => setPrice(e.target.value)}
+                        onKeyDown={(e) => ["e","E","+","-"].includes(e.key) && e.preventDefault()}
+                        min={0}
                         placeholder="e.g. 1200"
                         className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-black/10"
                       />
@@ -453,7 +455,11 @@ export default function Home() {
                         <input
                           type="date"
                           value={availableFrom}
-                          onChange={(e) => setAvailableFrom(e.target.value)}
+                          min={new Date().toISOString().slice(0, 10)}
+                          onChange={(e) => {
+                            setAvailableFrom(e.target.value);
+                            if (availableTo && e.target.value > availableTo) setAvailableTo("");
+                          }}
                           className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-black/10"
                         />
                       </div>
@@ -462,6 +468,7 @@ export default function Home() {
                         <input
                           type="date"
                           value={availableTo}
+                          min={availableFrom || new Date().toISOString().slice(0, 10)}
                           onChange={(e) => setAvailableTo(e.target.value)}
                           className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-black/10"
                         />
@@ -579,30 +586,32 @@ export default function Home() {
                           ))}
                         </div>
                       )}
-                      <label className="flex flex-col items-center justify-center w-full h-16 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 cursor-pointer hover:border-gray-400 transition-colors">
-                        <span className="text-xs text-gray-400">{photoPreviews.length > 0 ? "+ Add more photos" : "Click to upload photos"}</span>
-                        <input
-                          ref={photoInputRef}
-                          type="file"
-                          accept="image/*"
-                          multiple
-                          className="hidden"
-                          onChange={async (e) => {
-                            const newFiles = Array.from(e.target.files ?? []);
-                            if (photoInputRef.current) photoInputRef.current.value = "";
-                            const { toJpegBlob } = await import("@/lib/imageUtils");
-                            for (const file of newFiles) {
-                              const blob = await toJpegBlob(file);
-                              setPhotos((prev) => [...prev, blob as File]);
-                              const reader = new FileReader();
-                              reader.onload = (ev) => {
-                                setPhotoPreviews((prev) => [...prev, ev.target?.result as string]);
-                              };
-                              reader.readAsDataURL(blob);
-                            }
-                          }}
-                        />
-                      </label>
+                      {photoPreviews.length < 6 && (
+                        <label className="flex flex-col items-center justify-center w-full h-16 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 cursor-pointer hover:border-gray-400 transition-colors">
+                          <span className="text-xs text-gray-400">{photoPreviews.length > 0 ? `+ Add more photos (${6 - photoPreviews.length} left)` : "Click to upload photos"}</span>
+                          <input
+                            ref={photoInputRef}
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            className="hidden"
+                            onChange={async (e) => {
+                              const newFiles = Array.from(e.target.files ?? []).slice(0, 6 - photos.length);
+                              if (photoInputRef.current) photoInputRef.current.value = "";
+                              const { toJpegBlob } = await import("@/lib/imageUtils");
+                              for (const file of newFiles) {
+                                const blob = await toJpegBlob(file);
+                                setPhotos((prev) => [...prev, blob as File]);
+                                const reader = new FileReader();
+                                reader.onload = (ev) => {
+                                  setPhotoPreviews((prev) => [...prev, ev.target?.result as string]);
+                                };
+                                reader.readAsDataURL(blob);
+                              }
+                            }}
+                          />
+                        </label>
+                      )}
                     </div>
 
                     {emailError && <p className="text-red-500 text-xs">{emailError}</p>}

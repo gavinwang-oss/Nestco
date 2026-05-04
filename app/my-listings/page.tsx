@@ -177,7 +177,7 @@ function EditModal({ listing, onClose, onSave }: {
     setUploadingPhoto(true);
     const newUrls: string[] = [];
     const { toJpegBlob } = await import("@/lib/imageUtils");
-    for (const file of Array.from(files).slice(0, 10 - photos.length)) {
+    for (const file of Array.from(files).slice(0, 6 - photos.length)) {
       const path = `${listing.id}/${crypto.randomUUID()}.jpg`;
       const jpeg = await toJpegBlob(file);
       const { error } = await supabase.storage.from("listing-photos").upload(path, jpeg, { contentType: "image/jpeg", upsert: false });
@@ -266,10 +266,12 @@ function EditModal({ listing, onClose, onSave }: {
                 ))}
               </div>
             )}
-            <label className="flex items-center justify-center w-full h-12 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 cursor-pointer hover:border-gray-400 transition-colors">
-              <span className="text-xs text-gray-400">{uploadingPhoto ? "Uploading..." : "+ Add photos"}</span>
-              <input ref={photoInputRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => handlePhotoUpload(e.target.files)} />
-            </label>
+            {photos.length < 6 && (
+              <label className="flex items-center justify-center w-full h-12 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 cursor-pointer hover:border-gray-400 transition-colors">
+                <span className="text-xs text-gray-400">{uploadingPhoto ? "Uploading..." : `+ Add photos (${6 - photos.length} left)`}</span>
+                <input ref={photoInputRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => handlePhotoUpload(e.target.files)} />
+              </label>
+            )}
           </div>
 
           {/* Title */}
@@ -304,6 +306,8 @@ function EditModal({ listing, onClose, onSave }: {
           <div>
             <label className="text-xs font-medium text-gray-500 mb-1.5 block">Monthly rent ($)</label>
             <input type="number" value={price} onChange={(e) => setPrice(e.target.value)}
+              onKeyDown={(e) => ["e","E","+","-"].includes(e.key) && e.preventDefault()}
+              min={0}
               className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-black/10" />
           </div>
 

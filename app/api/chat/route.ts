@@ -164,7 +164,7 @@ function buildProfileSummary(profile: UserProfile | null): string {
     `Age: ${profile.age ?? "not provided"}`,
     `Year: ${profile.year_in_school ?? "not provided"}`,
     `Major: ${profile.major ?? "not provided"}`,
-    `Gender: ${profile.gender ?? "not provided"}`,
+    ...(profile.gender && profile.gender !== "prefer not to say" ? [`Gender: ${profile.gender}`] : []),
   ].join(" ");
 }
 
@@ -265,10 +265,10 @@ Format:
 
 Rules:
 - rankedIds lists listing IDs [${allIds.join(", ")}] ordered by relevance to the user's accumulated criteria.
-- scores maps listing IDs to 0-100 match percentages. When the user mentions ANY specific criteria (price, dates, type, gender preference, furnishing, utilities, roommates, distance, pets, parking, etc.), score EVERY SINGLE listing ID — do not omit any. A listing that meets ALL stated requirements scores 100. Only deduct points for criteria the listing explicitly fails to meet — do not deduct for subjective reasons, proximity guesses, or things not mentioned by the user. Partial matches (meets most but not all criteria) score 50-99. Incompatible listings score 10-40. Never omit a listing from scores once criteria exist. Only hard-zero a listing if it is completely incompatible (e.g. wrong gender for a gender-locked listing). If the user has not mentioned any criteria at all, set scores to {}.
+- scores maps listing IDs to 0-100 match percentages. When the user mentions ANY specific criteria (price, dates, type, gender preference, furnishing, utilities, roommates, distance, pets, parking, etc.), score EVERY SINGLE listing ID — do not omit any. A listing that meets ALL stated requirements MUST score exactly 100 — do NOT cap at 95 or 99 to seem more realistic; 100 is a valid and expected score. Only deduct points for criteria the listing explicitly fails to meet — do not deduct for subjective reasons, proximity guesses, or things not mentioned by the user. Partial matches (meets most but not all criteria) score 50-99. Incompatible listings score 10-40. Never omit a listing from scores once criteria exist. Only hard-zero a listing if it is completely incompatible (e.g. wrong gender for a gender-locked listing). If the user has not mentioned any criteria at all, set scores to {}.
 - For gender, distinguish who can move in from the gender of existing roommates. Only use listing fields provided above. Do not infer or recommend based on race, ethnicity, religion, national origin, or other protected characteristics.
 - Keep content to 2-4 sentences. Do not list every listing in content; the UI shows listing cards. Never use markdown formatting (no **bold**, no bullet points with -, no headers) — plain text only.
-- For message drafts, do not include the user's name. Use this exact format when profile data is available: "Hey, I'm a [age]-year-old [gender] [year] [major] student interested in your place. [One short relevant detail if it fits naturally.] I'd love to come check it out — when works?" You MUST include age, gender, year, and major in that exact order — never omit any of them. Never include race, ethnicity, cultural background, religion, or national origin.
+- For message drafts, do not include the user's name. Use this exact format when profile data is available: "Hey, I'm a [age]-year-old [gender] [year] [major] student interested in your place. [One short relevant detail if it fits naturally.] I'd love to come check it out — when works?" Include age, year, and major always. Only include [gender] if the user's gender is provided and is not "prefer not to say" — if gender is missing or prefer-not-to-say, drop it entirely and do not leave a grammatical gap (e.g. "I'm a 21-year-old junior" not "I'm a 21-year-old  junior"). Never include race, ethnicity, cultural background, religion, or national origin.
 - When asked about listings, refer to specific ones by address and price.
 - Stay focused on housing and redirect off-topic questions.
 - Never mention listing IDs to the user.

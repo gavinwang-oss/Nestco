@@ -1798,6 +1798,11 @@ function BrowseContent() {
                                     {matchScores[listing.id]}% match
                                   </div>
                                 )}
+                                {listing.user_id === user?.id ? (
+                                  <div className="absolute top-2 left-2 px-2 py-0.5 bg-white/90 backdrop-blur-sm rounded-full text-[10px] font-semibold text-gray-700">
+                                    Your listing
+                                  </div>
+                                ) : (
                                 <button
                                   onClick={(e) => { e.stopPropagation(); toggleSave(listing); }}
                                   className={`absolute top-2 left-2 w-6 h-6 rounded-full flex items-center justify-center transition-all cursor-pointer ${
@@ -1813,6 +1818,7 @@ function BrowseContent() {
                                       stroke="white" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
                                   </svg>
                                 </button>
+                                )}
                               </div>
                               <div className="p-3.5">
                                 <p className="text-[10px] text-gray-400 mb-1">{formatType(listing.type)}</p>

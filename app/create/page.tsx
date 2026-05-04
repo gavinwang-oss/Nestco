@@ -226,11 +226,11 @@ export default function Create() {
             setToast(null);
           }
           setTimeout(() => {
-            router.push("/browse");
+            router.push("/my-listings");
           }, count > 0 ? 3000 : 0);
         })
         .catch(() => {
-          router.push("/browse");
+          router.push("/my-listings");
         });
       });
     } else if (error) {
@@ -344,6 +344,7 @@ export default function Create() {
                       type="number"
                       value={form.price}
                       onChange={(e) => set("price", e.target.value)}
+                      onKeyDown={(e) => ["e","E","+","-"].includes(e.key) && e.preventDefault()}
                       placeholder="e.g. 1200"
                       min={0}
                       className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-black/10"
