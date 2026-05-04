@@ -45,7 +45,7 @@ export default function AuthCallback() {
   return (
     <div
       className="min-h-screen flex items-center justify-center"
-      style={{ backgroundColor: "#f5f4f0" }}
+      style={{ backgroundImage: `url('/sb1.png')`, backgroundSize: "cover", backgroundPosition: "center" }}
     >
       <div className="flex flex-col items-center gap-3">
         <div className="w-7 h-7 bg-black rounded-md flex items-center justify-center">

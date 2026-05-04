@@ -37,7 +37,7 @@ export default function DevLoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f5f4f0" }}>
+    <div className="min-h-screen flex items-center justify-center" style={{ backgroundImage: `url('/sb1.png')`, backgroundSize: "cover", backgroundPosition: "center" }}>
       <div className="bg-white rounded-2xl shadow-sm border border-black/[0.06] p-8 w-full max-w-sm">
         <div className="flex items-center gap-2.5 mb-6">
           <div className="w-7 h-7 bg-black rounded-md flex items-center justify-center">

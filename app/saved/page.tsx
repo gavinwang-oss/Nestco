@@ -42,9 +42,9 @@ const GRADIENTS = [
 ];
 
 const BG = {
-  backgroundColor: "#f5f4f0",
-  backgroundImage: `linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px)`,
-  backgroundSize: "42px 42px",
+  backgroundImage: `url('/sb1.png')`,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
 };
 
 export default function Saved() {

@@ -62,9 +62,9 @@ export default function ActivatePage() {
     <div
       className="min-h-screen flex items-center justify-center px-6"
       style={{
-        backgroundColor: "#f5f4f0",
-        backgroundImage: `linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px)`,
-        backgroundSize: "42px 42px",
+        backgroundImage: `url('/sb1.png')`,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
       }}
     >
       <div className="w-full max-w-md bg-white rounded-3xl border border-black/[0.06] shadow-sm p-10 text-center">
