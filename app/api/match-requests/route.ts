@@ -92,10 +92,11 @@ Walk to campus: ${listing.dwinelle_distance ? `${listing.dwinelle_distance} minu
 Description: ${listing.description}
 `.trim();
 
-    let matchedCount = 0;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.nestco.ai";
 
-    for (const request of requests) {
-      const requestDescription = `
+    const scoreResults = await Promise.all(
+      requests.map(async (request) => {
+        const requestDescription = `
 User request description: ${request.description}
 Max price: ${request.max_price ? `$${request.max_price}/mo` : "Not specified"}
 Room types wanted: ${request.room_types?.length ? request.room_types.join(", ") : "Any"}
@@ -107,74 +108,69 @@ Max walk to campus (minutes): ${request.max_walk_minutes || "Not specified"}
 Pets required: ${request.pets != null ? (request.pets ? "Yes" : "No") : "Not specified"}
 `.trim();
 
-      try {
-        const response = await client.messages.create({
-          model: "claude-haiku-4-5",
-          max_tokens: 256,
-          system:
-            "You are scoring a new listing against a user's housing request. Return a JSON object with { score: number (0-100), reason: string (1 sentence) }. Score based on how well the listing matches the request description and criteria. Return ONLY the raw JSON, no markdown, no code blocks.",
-          messages: [
-            {
-              role: "user",
-              content: `Listing:\n${listingDescription}\n\nRequest:\n${requestDescription}`,
-            },
-          ],
+        try {
+          const response = await client.messages.create({
+            model: "claude-haiku-4-5",
+            max_tokens: 256,
+            system: "You are scoring a new listing against a user's housing request. Return a JSON object with { score: number (0-100), reason: string (1 sentence) }. Score based on how well the listing matches the request description and criteria. Return ONLY the raw JSON, no markdown, no code blocks.",
+            messages: [{ role: "user", content: `Listing:\n${listingDescription}\n\nRequest:\n${requestDescription}` }],
+          });
+
+          const raw = response.content[0].type === "text" ? response.content[0].text : "{}";
+          const parsed = parseScoreResponse(raw);
+          const score = typeof parsed.score === "number" ? parsed.score : 0;
+          const reason = typeof parsed.reason === "string" ? parsed.reason : "";
+          return { request, score, reason };
+        } catch (err) {
+          console.error(`Error scoring request ${request.id}:`, err);
+          return null;
+        }
+      })
+    );
+
+    let matchedCount = 0;
+
+    await Promise.all(
+      scoreResults.map(async (result) => {
+        if (!result || result.score < 65) return;
+        const { request, score, reason } = result;
+        matchedCount++;
+
+        await supabase.from("notifications").insert({
+          user_id: request.user_id,
+          type: "listing_match",
+          listing_id: listing.id,
+          request_id: request.id,
+          score,
+          reason,
+          read: false,
         });
 
-        const raw = response.content[0].type === "text" ? response.content[0].text : "{}";
-        let score = 0;
-        let reason = "";
-        try {
-          const parsed = parseScoreResponse(raw);
-          score = typeof parsed.score === "number" ? parsed.score : 0;
-          reason = typeof parsed.reason === "string" ? parsed.reason : "";
-        } catch {
-          console.error("Failed to parse Claude score response:", raw);
-          continue;
+        if (request.user_email) {
+          fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              from: "Nestco <noreply@nestco.ai>",
+              to: request.user_email,
+              subject: "A new listing matches your request on Nestco",
+              html: `
+                <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 24px; background: #ffffff;">
+                  <table cellpadding="0" cellspacing="0" style="margin-bottom: 32px;"><tr>
+                    <td style="width: 32px; height: 32px; background: #000; border-radius: 8px; text-align: center; vertical-align: middle;"><span style="color: white; font-size: 14px; font-weight: 700; line-height: 32px;">N</span></td>
+                    <td style="padding-left: 10px; font-size: 17px; font-weight: 600; color: #111; vertical-align: middle;">nestco</td>
+                  </tr></table>
+                  <h1 style="font-size: 22px; font-weight: 700; color: #0f0f0f; margin: 0 0 8px;">New listing match</h1>
+                  <p style="font-size: 15px; color: #555; margin: 0 0 8px; line-height: 1.5;">A new listing matches your housing request: <strong>${listing.address}</strong></p>
+                  <p style="font-size: 14px; color: #777; margin: 0 0 28px; line-height: 1.5;">${reason}</p>
+                  <a href="${appUrl}/browse?listing=${listing.id}" style="display: inline-block; background: #000; color: #fff; text-decoration: none; font-size: 14px; font-weight: 600; padding: 12px 24px; border-radius: 100px;">View listing →</a>
+                  <p style="font-size: 12px; color: #aaa; margin-top: 40px;"><a href="${appUrl}" style="color: #aaa;">nestco.ai</a></p>
+                </div>`,
+            }),
+          }).catch(() => {});
         }
-
-        if (score >= 65) {
-          matchedCount++;
-          await supabase.from("notifications").insert({
-            user_id: request.user_id,
-            type: "listing_match",
-            listing_id: listing.id,
-            request_id: request.id,
-            score,
-            reason,
-            read: false,
-          });
-          // Email the requester
-          if (request.user_email) {
-            const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.nestco.ai";
-            const listingLabel = listing.title ?? listing.address;
-            fetch("https://api.resend.com/emails", {
-              method: "POST",
-              headers: { "Authorization": `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-              body: JSON.stringify({
-                from: "Nestco <noreply@nestco.ai>",
-                to: request.user_email,
-                subject: "A new listing matches your request on Nestco",
-                html: `
-                  <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 24px; background: #ffffff;">
-                    <table cellpadding="0" cellspacing="0" style="margin-bottom: 32px;"><tr>
-                      <td style="width: 32px; height: 32px; background: #000; border-radius: 8px; text-align: center; vertical-align: middle;"><span style="color: white; font-size: 14px; font-weight: 700; line-height: 32px;">N</span></td>
-                      <td style="padding-left: 10px; font-size: 17px; font-weight: 600; color: #111; vertical-align: middle;">nestco</td>
-                    </tr></table>
-                    <h1 style="font-size: 22px; font-weight: 700; color: #0f0f0f; margin: 0 0 8px;">New listing match</h1>
-                    <p style="font-size: 15px; color: #555; margin: 0 0 8px; line-height: 1.5;">A new listing matches your housing request: <strong>${listingLabel}</strong></p>
-                    <p style="font-size: 14px; color: #777; margin: 0 0 28px; line-height: 1.5;">${reason}</p>
-                    <a href="${appUrl}/browse?listing=${listing.id}" style="display: inline-block; background: #000; color: #fff; text-decoration: none; font-size: 14px; font-weight: 600; padding: 12px 24px; border-radius: 100px;">View listing →</a>
-                    <p style="font-size: 12px; color: #aaa; margin-top: 40px;"><a href="${appUrl}" style="color: #aaa;">nestco.ai</a></p>
-                  </div>`,
-              }),
-            }).catch(() => {});
-          }
-        }
-      } catch (err) {
-        console.error(`Error scoring request ${request.id}:`, err);
-      }
-    }
+      })
+    );
 
     return NextResponse.json({ matched: matchedCount });
   } catch (error: unknown) {

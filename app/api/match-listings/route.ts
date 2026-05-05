@@ -59,10 +59,10 @@ Pets required: ${request.pets != null ? (request.pets ? "Yes" : "No") : "Not spe
 `.trim();
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.nestco.ai";
-    const matches: { listingId: number; score: number; reason: string }[] = [];
 
-    for (const listing of listings) {
-      const listingDescription = `
+    const scoreResults = await Promise.all(
+      listings.map(async (listing) => {
+        const listingDescription = `
 Address: ${listing.address}
 Type: ${listing.type}
 Price: $${listing.price}/mo${listing.utilities_included ? " (utilities included)" : ""}
@@ -74,63 +74,70 @@ Walk to campus: ${listing.dwinelle_distance ? `${listing.dwinelle_distance} minu
 Description: ${listing.description}
 `.trim();
 
-      try {
-        const response = await client.messages.create({
-          model: "claude-haiku-4-5",
-          max_tokens: 256,
-          system: "You are scoring a listing against a user's housing request. Return a JSON object with { score: number (0-100), reason: string (1 sentence) }. Return ONLY the raw JSON, no markdown, no code blocks.",
-          messages: [{ role: "user", content: `Listing:\n${listingDescription}\n\nRequest:\n${requestDescription}` }],
-        });
-
-        const raw = response.content[0].type === "text" ? response.content[0].text : "{}";
-        const parsed = parseScoreResponse(raw);
-        const score = typeof parsed.score === "number" ? parsed.score : 0;
-        const reason = typeof parsed.reason === "string" ? parsed.reason : "";
-
-        if (score >= 65) {
-          matches.push({ listingId: listing.id, score, reason });
-
-          // Notify lister in-app
-          await supabase.from("notifications").insert({
-            user_id: listing.user_id,
-            type: "request_match",
-            listing_id: listing.id,
-            request_id: request.id,
-            score,
-            reason,
-            read: false,
+        try {
+          const response = await client.messages.create({
+            model: "claude-haiku-4-5",
+            max_tokens: 256,
+            system: "You are scoring a listing against a user's housing request. Return a JSON object with { score: number (0-100), reason: string (1 sentence) }. Return ONLY the raw JSON, no markdown, no code blocks.",
+            messages: [{ role: "user", content: `Listing:\n${listingDescription}\n\nRequest:\n${requestDescription}` }],
           });
 
-          // Email lister
-          const { data: { user: lister } } = await supabase.auth.admin.getUserById(listing.user_id);
-          if (lister?.email) {
-            fetch("https://api.resend.com/emails", {
-              method: "POST",
-              headers: { "Authorization": `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-              body: JSON.stringify({
-                from: "Nestco <noreply@nestco.ai>",
-                to: lister.email,
-                subject: "A student is looking for a place like yours on Nestco",
-                html: `
-                  <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 24px; background: #ffffff;">
-                    <table cellpadding="0" cellspacing="0" style="margin-bottom: 32px;"><tr>
-                      <td style="width: 32px; height: 32px; background: #000; border-radius: 8px; text-align: center; vertical-align: middle;"><span style="color: white; font-size: 14px; font-weight: 700; line-height: 32px;">N</span></td>
-                      <td style="padding-left: 10px; font-size: 17px; font-weight: 600; color: #111; vertical-align: middle;">nestco</td>
-                    </tr></table>
-                    <h1 style="font-size: 22px; font-weight: 700; color: #0f0f0f; margin: 0 0 8px;">Someone is looking for a place like yours</h1>
-                    <p style="font-size: 15px; color: #555; margin: 0 0 8px; line-height: 1.5;">A new housing request matches your listing at <strong>${listing.title ?? listing.address}</strong>.</p>
-                    <p style="font-size: 14px; color: #777; margin: 0 0 28px; line-height: 1.5;">${reason}</p>
-                    <a href="${appUrl}/requests" style="display: inline-block; background: #000; color: #fff; text-decoration: none; font-size: 14px; font-weight: 600; padding: 12px 24px; border-radius: 100px;">View request →</a>
-                    <p style="font-size: 12px; color: #aaa; margin-top: 40px;"><a href="${appUrl}" style="color: #aaa;">nestco.ai</a></p>
-                  </div>`,
-              }),
-            }).catch(() => {});
-          }
+          const raw = response.content[0].type === "text" ? response.content[0].text : "{}";
+          const parsed = parseScoreResponse(raw);
+          const score = typeof parsed.score === "number" ? parsed.score : 0;
+          const reason = typeof parsed.reason === "string" ? parsed.reason : "";
+          return { listing, score, reason };
+        } catch (err) {
+          console.error(`Error scoring listing ${listing.id}:`, err);
+          return null;
         }
-      } catch (err) {
-        console.error(`Error scoring listing ${listing.id}:`, err);
-      }
-    }
+      })
+    );
+
+    const matches: { listingId: number; score: number; reason: string }[] = [];
+
+    await Promise.all(
+      scoreResults.map(async (result) => {
+        if (!result || result.score < 65) return;
+        const { listing, score, reason } = result;
+        matches.push({ listingId: listing.id, score, reason });
+
+        await supabase.from("notifications").insert({
+          user_id: listing.user_id,
+          type: "request_match",
+          listing_id: listing.id,
+          request_id: request.id,
+          score,
+          reason,
+          read: false,
+        });
+
+        const { data: { user: lister } } = await supabase.auth.admin.getUserById(listing.user_id);
+        if (lister?.email) {
+          fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              from: "Nestco <noreply@nestco.ai>",
+              to: lister.email,
+              subject: "A student is looking for a place like yours on Nestco",
+              html: `
+                <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 24px; background: #ffffff;">
+                  <table cellpadding="0" cellspacing="0" style="margin-bottom: 32px;"><tr>
+                    <td style="width: 32px; height: 32px; background: #000; border-radius: 8px; text-align: center; vertical-align: middle;"><span style="color: white; font-size: 14px; font-weight: 700; line-height: 32px;">N</span></td>
+                    <td style="padding-left: 10px; font-size: 17px; font-weight: 600; color: #111; vertical-align: middle;">nestco</td>
+                  </tr></table>
+                  <h1 style="font-size: 22px; font-weight: 700; color: #0f0f0f; margin: 0 0 8px;">Someone is looking for a place like yours</h1>
+                  <p style="font-size: 15px; color: #555; margin: 0 0 8px; line-height: 1.5;">A new housing request matches your listing at <strong>${listing.address}</strong>.</p>
+                  <p style="font-size: 14px; color: #777; margin: 0 0 28px; line-height: 1.5;">${reason}</p>
+                  <a href="${appUrl}/requests" style="display: inline-block; background: #000; color: #fff; text-decoration: none; font-size: 14px; font-weight: 600; padding: 12px 24px; border-radius: 100px;">View request →</a>
+                  <p style="font-size: 12px; color: #aaa; margin-top: 40px;"><a href="${appUrl}" style="color: #aaa;">nestco.ai</a></p>
+                </div>`,
+            }),
+          }).catch(() => {});
+        }
+      })
+    );
 
     return NextResponse.json({ matched: matches.length, listingIds: matches.map((m) => m.listingId) });
   } catch (error) {
