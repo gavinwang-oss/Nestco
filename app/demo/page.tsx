@@ -29,6 +29,8 @@ export default function DemoPage() {
       return;
     }
 
+    localStorage.removeItem("nestco_onboarding_v2");
+    localStorage.removeItem("nestco_swipe_tutorial_v1");
     router.push(data.link);
   };
 
