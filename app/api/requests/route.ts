@@ -24,7 +24,7 @@ export async function DELETE(req: NextRequest) {
 
     const { error } = await supabase
       .from("requests")
-      .update({ is_active: false })
+      .delete()
       .eq("id", requestId)
       .eq("user_id", user.id);
 
