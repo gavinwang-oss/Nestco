@@ -37,20 +37,6 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-### Environment Variables
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
-ANTHROPIC_API_KEY=
-RESEND_API_KEY=
-NEXT_PUBLIC_APP_URL=https://www.nestco.ai
-NEXT_PUBLIC_ADMIN_EMAILS=
-```
-
-> `NEXT_PUBLIC_APP_URL` must include `www` (no trailing slash) — magic link hashes get stripped on the bare-domain 307 redirect otherwise.
-
 ## Seeding Demo Data
 
 ```bash
