@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import Navbar from "@/components/Navbar";
+import Link from "next/link";
 import {
   AreaChart,
   Area,
@@ -419,7 +420,27 @@ export default function AdminPage() {
           </button>
         </div>
 
-        {/* Tabs */}
+        {/* Page-level tabs */}
+        <div className="flex gap-1 mb-6 bg-gray-100 rounded-lg p-1 w-fit">
+          {[
+            { label: "Admin Dashboard", href: "/admin" },
+            { label: "Workspace", href: "/workspace" },
+          ].map((p) => (
+            <Link
+              key={p.href}
+              href={p.href}
+              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                p.href === "/admin"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              {p.label}
+            </Link>
+          ))}
+        </div>
+
+        {/* Sub-tabs */}
         <div className="flex gap-1 mb-6 bg-gray-100 rounded-lg p-1 w-fit">
           {tabs.map((t) => (
             <button
