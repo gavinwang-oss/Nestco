@@ -596,7 +596,6 @@ export default function WorkspacePage() {
               const memberTasks = tasks.filter(
                 (t) => t.assigned_to === member.id
               );
-              if (memberTasks.length === 0 && !showCompleted) return null;
               return (
                 <TaskSection
                   key={member.id}
