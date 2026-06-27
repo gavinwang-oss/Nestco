@@ -5,13 +5,14 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { isAdminEmail } from "@/lib/admin";
 
-// Anyone can visit these
-const PUBLIC_PATHS = ["/", "/activate", "/auth/callback", "/tos", "/login", "/dev-login", "/demo"];
+// Anyone can visit these (no login required)
+const PUBLIC_PATHS = ["/login", "/dev-login", "/demo", "/tos", "/auth/callback"];
 
-// Any authenticated user (i.e. a lister who came through magic link) can visit these
-const LISTER_PATHS = ["/my-listings"];
+// Internal-only routes — restricted to admin emails
+const ADMIN_PATHS = ["/admin", "/workspace"];
 
-// Everything else (/browse, /inbox, /requests, /saved, /create, /profile) requires admin
+// Everything else (/browse, /inbox, /requests, /saved, /create, /profile,
+// /my-listings, /listings) requires any authenticated user.
 
 export default function RouteGuard({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -19,19 +20,19 @@ export default function RouteGuard({ children }: { children: React.ReactNode }) 
   const router = useRouter();
 
   const isPublic = PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"));
-  const isListerPath = LISTER_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"));
+  const isAdminPath = ADMIN_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"));
   const isAdmin = isAdminEmail(user?.email);
 
   useEffect(() => {
     if (loading) return;
     if (isPublic) return;
-    if (isListerPath) {
-      if (!user) router.replace("/");
+    if (!user) {
+      router.replace("/login");
       return;
     }
-    // Admin-only route
-    if (!isAdmin) router.replace("/");
-  }, [loading, user, pathname, isPublic, isListerPath, isAdmin, router]);
+    // Authenticated but not admin → keep out of admin routes
+    if (isAdminPath && !isAdmin) router.replace("/browse");
+  }, [loading, user, pathname, isPublic, isAdminPath, isAdmin, router]);
 
   // Public routes — always render immediately
   if (isPublic) return <>{children}</>;
@@ -39,9 +40,12 @@ export default function RouteGuard({ children }: { children: React.ReactNode }) 
   // While auth is still loading, show nothing to avoid flashing protected content
   if (loading) return null;
 
-  // Lister-accessible routes
-  if (isListerPath) return user ? <>{children}</> : null;
+  // Not logged in — protected content stays hidden until redirect lands
+  if (!user) return null;
 
   // Admin-only routes
-  return isAdmin ? <>{children}</> : null;
+  if (isAdminPath) return isAdmin ? <>{children}</> : null;
+
+  // Any authenticated user
+  return <>{children}</>;
 }

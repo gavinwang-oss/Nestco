@@ -30,9 +30,9 @@ export async function POST(req: NextRequest) {
   if ("error" in auth) return auth.error;
 
   const body = await req.json();
-  const { title, assigned_to } = body as {
+  const { title, assigned_to_member } = body as {
     title: string;
-    assigned_to: string | null;
+    assigned_to_member: number | null;
   };
 
   if (!title?.trim()) {
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     .from("workspace_tasks")
     .insert({
       title: title.trim(),
-      assigned_to: assigned_to || null,
+      assigned_to_member: assigned_to_member ?? null,
       created_by: auth.user.id,
       completed: false,
     })
@@ -57,16 +57,16 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ task });
 }
 
-// PATCH — toggle completed or update task
+// PATCH — toggle completed or reassign task
 export async function PATCH(req: NextRequest) {
   const auth = await requireAdmin(req);
   if ("error" in auth) return auth.error;
 
   const body = await req.json();
-  const { id, completed, assigned_to } = body as {
+  const { id, completed, assigned_to_member } = body as {
     id: number;
     completed?: boolean;
-    assigned_to?: string | null;
+    assigned_to_member?: number | null;
   };
 
   if (!id) {
@@ -78,8 +78,8 @@ export async function PATCH(req: NextRequest) {
     updates.completed = completed;
     updates.completed_at = completed ? new Date().toISOString() : null;
   }
-  if (assigned_to !== undefined) {
-    updates.assigned_to = assigned_to || null;
+  if (assigned_to_member !== undefined) {
+    updates.assigned_to_member = assigned_to_member ?? null;
   }
 
   const { data: task, error } = await supabaseAdmin

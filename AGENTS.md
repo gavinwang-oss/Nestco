@@ -21,7 +21,7 @@ Nestco is a UC Berkeley student sublet marketplace. Students can browse listings
 ## Key pages
 | Route | File | Purpose |
 |---|---|---|
-| `/` | `app/page.tsx` | Landing page — waitlist signup + lister detail form with magic link flow. Has TOS checkbox (required before Join Waitlist). Real Unsplash apartment photos on listing cards. |
+| `/` | `app/page.tsx` | Redirects to `/browse` (the homepage). Unauthenticated visitors are sent to `/login` by `RouteGuard`. |
 | `/browse` | `app/browse/page.tsx` | Main page — listing grid, AI chat panel, detail panel, compare mode. Shows profile completion banner if profile is incomplete. Expired listings filtered out. Includes `<OnboardingTooltip>` and `<SwipeTutorial>`. |
 | `/create` | `app/create/page.tsx` | Post a new listing (multi-step form with photo upload) |
 | `/inbox` | `app/inbox/page.tsx` | Two-panel DM interface — conversation list left, thread right. Includes match mechanic. |
@@ -32,15 +32,13 @@ Nestco is a UC Berkeley student sublet marketplace. Students can browse listings
 | `/tos` | `app/tos/page.tsx` | Terms of Service page. Contact email: support@nestco.ai |
 | `/login` | `app/login/page.tsx` | Standalone magic link login page — sends OTP via `signInWithOtp` with `shouldCreateUser: false`. For existing users only (including magic-link-only listers who have no password). |
 | `/dev-login` | `app/dev-login/page.tsx` | Dev-only login tool (returns null in production). Shows buttons for each dev email, calls `/api/dev-login` to generate a magic link without sending an email. |
-| `/activate` | `app/activate/page.tsx` | Magic link landing page — creates listing from pending_listings on auth |
-| `/auth/callback` | `app/auth/callback/page.tsx` | Auth callback — reads `?next=` param and redirects after SIGNED_IN. Uses both `onAuthStateChange` and `getSession()` fallback to fix race condition where SIGNED_IN fires before listener registers. |
+| `/auth/callback` | `app/auth/callback/page.tsx` | Auth callback — reads `?next=` param (defaults to `/browse`) and redirects after SIGNED_IN. Uses both `onAuthStateChange` and `getSession()` fallback to fix race condition where SIGNED_IN fires before listener registers. |
+| `/admin`, `/workspace` | `app/admin/page.tsx`, `app/workspace/page.tsx` | Internal-only dashboards. Restricted to admin emails by `RouteGuard`. |
 
 ## Key API routes
 - `app/api/chat/route.ts` — AI chat. Requires a Supabase Bearer token and rate limits to 30 messages/day per user. Takes `messages` plus optional selected listing context. The server fetches listings, saved IDs, and profile context directly from Supabase instead of trusting client-provided copies. Returns `{ content, rankedIds, scores, suggestedListingId, action, compareIds, draftContent }`. AI prompt instructs plain text only — no markdown formatting. The currently viewed listing is explicitly injected into the system prompt as "IMPORTANT: The user is currently viewing..." so the AI can answer follow-up questions about it without asking which listing the user means.
 - `app/api/match-requests/route.ts` — Called after a new listing is created. Requires Bearer token + ownership check. Scores all active requests against the listing using Claude and inserts into `notifications` table.
-- `app/api/waitlist/route.ts` — Two-step flow. Step 1: insert email → creates Supabase auth account via `admin.createUser` (email_confirm: true, no Supabase email sent) → sends "You're on the list!" branded email via Resend → returns `waitlist_id`. Only sends email on new entries (duplicate emails skip it). Every waitlist signup (finder or lister) gets a Supabase auth account created immediately at step 1. Step 2: accepts FormData (not JSON) with listing details + photo files. Photos are compressed server-side using `sharp` (resize to max 1920px wide, 80% JPEG quality) before uploading to `listing-photos/pending/`. Saves to `pending_listings`, generates magic link via `admin.generateLink` (no Supabase email), sends branded "Publish your listing" email via Resend.
 - `app/api/dev-login/route.ts` — Dev-only (returns 404 in production). POST with `{ email }` from hardcoded allowlist (`developer@nestco.edu`, `gavin_wang@berkeley.edu`). Returns a magic link URL without sending an email.
-- `app/api/activate-listing/route.ts` — Called from `/activate` with Bearer token. Finds pending listing by email, creates real listing in `listings` table, deletes from `pending_listings`.
 - `app/api/notify/message/route.ts` — Sends a "new message" email notification via Resend. Requires Bearer token. Looks up recipient email via service role, skips if sender === recipient. Fire-and-forget from the browse page when a message is sent.
 - `app/api/notify/match/route.ts` — Sends "you matched!" email to both lister and renter via Resend when `matched_at` is set. Requires Bearer token. Sends role-specific copy to each party in parallel.
 
@@ -68,25 +66,16 @@ User profiles. Fields: `user_id`, `name`, `age`, `major`, `year_in_school`, `rac
 ### `saved_listings`
 `user_id` + `listing_id`.
 
-### `Waitlist`
-Pre-launch waitlist. Fields: `id`, `email`, `intent` ("find" or "list"), `listing_type`, `location`, `price`, `available_from`, `available_to`, `description`. RLS: enabled (anon INSERT only via policy; no SELECT/UPDATE/DELETE for public).
-
-### `pending_listings`
-Listings submitted via waitlist form before the user has an account. Fields: `id`, `email`, `listing_type`, `address`, `price`, `available_from`, `available_to`, `description`, `furnished`, `utilities_included`, `pets`, `parking`, `gender_preference`, `photos` (text, stores JSON array of storage URLs), `status` ("pending"). RLS: enabled — anon INSERT only. Service role key bypasses RLS for server-side reads/deletes.
+### `Waitlist`, `pending_listings` (legacy — no longer written)
+These backed the pre-launch waitlist + magic-link lister flow, which was removed at launch. The tables still exist in Supabase (and `/admin` stats still read counts from them) but nothing writes to them anymore. Safe to drop in a future migration if desired.
 
 ## Important patterns & conventions
 
 ### Auth token passing
 The browse page stores a session token in a `useRef` (`sessionTokenRef`) to avoid stale closures. Fetch calls to `/api/chat` and `/api/match-requests` include `Authorization: Bearer <token>` headers. `/api/chat` returns 401 with user-facing copy if the token is missing or invalid.
 
-### Magic link lister flow
-1. Lister fills out email + full listing details on `/` (no password, no account)
-2. Form submits as **FormData** (not JSON) to `/api/waitlist` — photos are File objects
-3. Step 1 (email only): creates Supabase auth account via `admin.createUser`, sends "You're on the list!" Resend email
-4. Step 2 (listing details): API uploads photos, saves to `pending_listings`, generates magic link via `admin.generateLink`, sends branded "Publish your listing" Resend email
-5. User clicks email link → `/auth/callback` establishes session → redirects to `/activate`
-6. `/activate` calls `/api/activate-listing` with Bearer token → listing published → user redirected to `/my-listings`
-7. User ends up with a real Nestco account (no password ever set — magic link only login)
+### Listing creation
+Authenticated users post listings via the in-app `/create` multi-step form (photos compressed client-side, then uploaded to `listing-photos/`). The old pre-account waitlist + magic-link "publish your listing" flow was removed at launch.
 
 ### Auth callback routing
 `/auth/callback` reads `?next=` query param (defaults to `/browse`). Uses both `onAuthStateChange` and `getSession()` as fallback in case the SIGNED_IN event fires before the listener is registered. Wrapped in Suspense boundary (required by Next.js for `useSearchParams`).
@@ -120,9 +109,6 @@ The AI prompt explicitly instructs no markdown formatting (no `**bold**`, no `-`
 ### AI rate limiting
 Supabase-backed via `chat_usage` table + `increment_chat_usage` SECURITY DEFINER RPC. Resets daily. Limit: 30 messages/day per user. Returns 429 with a friendly message if exceeded. (Previously in-memory Map — reset on Vercel cold starts.)
 
-### Waitlist details
-The waitlist endpoint returns `waitlist_id` on the initial email insert. Follow-up detail submissions must send that `waitlist_id` with the email; the API no longer updates rows by email alone. Step 2 uses FormData (not JSON) to support photo file uploads. Intent ("find"/"list") is optional — users can skip it, resulting in an empty string stored in the `intent` column.
-
 ### Onboarding & tutorial components
 - `components/OnboardingTooltip.tsx` — 4-step walkthrough shown on first browse visit. localStorage key: `nestco_onboarding_v2`. Steps: AI search → Browse & message → Save & match → Post a request. Backdrop blur overlay, step dots, Next/Skip buttons.
 - `components/SwipeTutorial.tsx` — Shown on first listing detail view. localStorage key: `nestco_swipe_tutorial_v1`. Animates a placeholder card swiping left/right using Framer Motion `useMotionValue` + `animate()` loop. Tap anywhere to dismiss.
@@ -131,12 +117,10 @@ The waitlist endpoint returns `waitlist_id` on the initial email insert. Follow-
 Browse page and AI chat both filter out expired listings using `.or('available_to.is.null,available_to.gte.TODAY')`. My-listings page shows a red "Expired" badge when `available_to` < today.
 
 ### Photo reordering
-Both the landing page lister form and the EditModal in `/my-listings` support ←/→ buttons on photo thumbnails to reorder photos. First photo is labelled "Cover". Reorder swaps adjacent elements in both the `photos[]` URL array and `photoPreviews[]` display array.
+The EditModal in `/my-listings` supports ←/→ buttons on photo thumbnails to reorder photos. First photo is labelled "Cover". Reorder swaps adjacent elements in both the `photos[]` URL array and `photoPreviews[]` display array.
 
 ### Photo compression
-All photos are compressed before upload to handle large files (e.g. HEIC from iPhones, high-res camera shots) that would exceed Vercel's 4.5MB request limit. Two layers:
-- **Client-side** (`lib/imageUtils.ts` `toJpegBlob()`): resizes to max 1920px wide, 80% JPEG quality using canvas. Used in the landing page waitlist form and `/my-listings` edit modal.
-- **Server-side** (`app/api/waitlist/route.ts`): same resize/compress using `sharp` as a second pass on uploaded files. Do not remove either layer — they serve different upload paths.
+Photos are compressed client-side before upload to handle large files (e.g. HEIC from iPhones, high-res camera shots) that would exceed Vercel's 4.5MB request limit. `lib/imageUtils.ts` `toJpegBlob()` resizes to max 1920px wide, 80% JPEG quality using canvas. Used in the `/create` form and the `/my-listings` edit modal. (The server-side `sharp` pass was removed with the waitlist route; `sharp` remains a dependency but is no longer used at runtime.)
 
 ### Photo lightbox
 Clicking a photo in the detail panel opens a fullscreen lightbox overlay (`fixed inset-0 z-[9999]`). Arrow navigation, dot indicators, close via X button, click outside, or Escape key. Implemented directly inside the `DetailPanel` component in `app/browse/page.tsx` using local `lightboxOpen` state.
@@ -152,17 +136,21 @@ Conversations are grouped by `${listing_id}__${other_user_id}` from the current 
 
 ### Supabase storage
 - Avatars bucket: `avatars/` — use public URLs (cache-busted with `?t=` timestamp)
-- Photos bucket: `listing-photos/` — public URLs. Pending listing photos uploaded to `listing-photos/pending/` by service role during waitlist submission.
+- Photos bucket: `listing-photos/` — public URLs, uploaded from the `/create` form.
 
 ### match-requests security
 The `/api/match-requests` endpoint verifies the Bearer token, fetches the listing, and checks `listing.user_id === user.id` before proceeding. Returns 401/403 otherwise.
 
 ## Navbar / access model
-- Most nav links (Browse, Requests, Saved, Inbox, Profile) are gated behind `isAdmin` in `Navbar.tsx`. Regular logged-in users only see "My listings". This is a pre-launch gate — not intended to be permanent.
-- Unauthenticated users see a "Log in" link (href="/login") in the Navbar (desktop + mobile). `/login` and `/dev-login` are in `PUBLIC_PATHS` in `RouteGuard.tsx` so the route guard doesn't redirect unauthenticated users away from them.
-- `AuthModal` (password-based) still exists and is rendered by `Navbar`, but has no trigger. The primary login path for all users — including password-account users — is `/login` (magic link).
+- The app is launched: any authenticated user can access Browse, Requests, My listings, Saved, Inbox, and Profile — all shown in `Navbar.tsx` (desktop + mobile).
+- `RouteGuard.tsx`:
+  - `PUBLIC_PATHS` (no login): `/login`, `/dev-login`, `/demo`, `/tos`, `/auth/callback`.
+  - `ADMIN_PATHS` (admin emails only, via `isAdminEmail`): `/admin`, `/workspace`. Non-admins are bounced to `/browse`.
+  - Everything else requires authentication; unauthenticated visitors are redirected to `/login`.
+- Unauthenticated users see a "Log in" link (href="/login") in the Navbar (desktop + mobile).
+- `AuthModal` (password-based) still exists and is rendered by `Navbar`, but has no trigger. The primary login path for all users is `/login` (magic link).
 
 ## Things NOT yet built
 - Referral/ambassador tracking links
 - Full Supabase migrations for all tables, storage buckets, RLS policies, and indexes
-- Removing the isAdmin gate from the Navbar so regular users can access Browse, Requests, Saved, Inbox, and Profile
+- Dropping the now-orphaned `Waitlist` / `pending_listings` tables

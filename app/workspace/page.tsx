@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import useSWR from "swr";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import Navbar from "@/components/Navbar";
@@ -11,17 +12,18 @@ import Link from "next/link";
 type Task = {
   id: number;
   title: string;
-  assigned_to: string | null;
+  assigned_to_member: number | null;
   created_by: string;
   completed: boolean;
   completed_at: string | null;
   created_at: string;
 };
 
-type TeamMember = {
-  id: string;
-  email: string;
-  name: string | null;
+type Member = {
+  id: number;
+  name: string;
+  added_by: string;
+  created_at: string;
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────
@@ -31,8 +33,14 @@ async function getToken(): Promise<string | null> {
   return data.session?.access_token ?? null;
 }
 
-function displayName(member: TeamMember): string {
-  return member.name || member.email.split("@")[0];
+async function authedFetch(url: string) {
+  const token = await getToken();
+  if (!token) throw new Error("No token");
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Fetch failed");
+  return res.json();
 }
 
 function timeAgo(iso: string): string {
@@ -50,26 +58,21 @@ function timeAgo(iso: string): string {
 
 function TaskItem({
   task,
-  team,
-  currentUserId,
+  members,
   onToggle,
   onDelete,
   onAssign,
 }: {
   task: Task;
-  team: TeamMember[];
-  currentUserId: string;
+  members: Member[];
   onToggle: (id: number, completed: boolean) => void;
   onDelete: (id: number) => void;
-  onAssign: (id: number, userId: string | null) => void;
+  onAssign: (id: number, memberId: number | null) => void;
 }) {
   const [showAssign, setShowAssign] = useState(false);
-  const creator = team.find((m) => m.id === task.created_by);
-  const assignee = task.assigned_to
-    ? team.find((m) => m.id === task.assigned_to)
+  const assignee = task.assigned_to_member
+    ? members.find((m) => m.id === task.assigned_to_member)
     : null;
-  const isSuggested =
-    task.assigned_to && task.created_by !== task.assigned_to;
 
   return (
     <div
@@ -95,27 +98,15 @@ function TaskItem({
       <div className="flex-1 min-w-0">
         <p
           className={`text-sm ${
-            task.completed
-              ? "line-through text-gray-400"
-              : "text-gray-900"
+            task.completed ? "line-through text-gray-400" : "text-gray-900"
           }`}
         >
           {task.title}
         </p>
         <div className="flex items-center gap-2 mt-1 flex-wrap">
-          {isSuggested && task.assigned_to === currentUserId && (
-            <span className="inline-block px-1.5 py-0.5 text-[10px] font-medium bg-blue-50 text-blue-600 rounded">
-              Suggested by {creator ? displayName(creator) : "someone"}
-            </span>
-          )}
-          {isSuggested && task.created_by === currentUserId && assignee && (
-            <span className="inline-block px-1.5 py-0.5 text-[10px] font-medium bg-purple-50 text-purple-600 rounded">
-              Suggested to {displayName(assignee)}
-            </span>
-          )}
-          {assignee && !isSuggested && (
+          {assignee && (
             <span className="inline-block px-1.5 py-0.5 text-[10px] font-medium bg-gray-100 text-gray-500 rounded">
-              {displayName(assignee)}
+              {assignee.name}
             </span>
           )}
           <span className="text-[10px] text-gray-400">
@@ -129,7 +120,7 @@ function TaskItem({
           <button
             onClick={() => setShowAssign(!showAssign)}
             className="p-1 text-gray-400 hover:text-gray-600 rounded"
-            title="Assign / suggest to someone"
+            title="Assign to someone"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
@@ -143,15 +134,15 @@ function TaskItem({
               >
                 Company-wide (unassign)
               </button>
-              {team.map((m) => (
+              {members.map((m) => (
                 <button
                   key={m.id}
                   onClick={() => { onAssign(task.id, m.id); setShowAssign(false); }}
                   className={`w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 ${
-                    task.assigned_to === m.id ? "text-blue-600 font-medium" : "text-gray-700"
+                    task.assigned_to_member === m.id ? "text-blue-600 font-medium" : "text-gray-700"
                   }`}
                 >
-                  {displayName(m)} {m.id === currentUserId ? "(you)" : ""}
+                  {m.name}
                 </button>
               ))}
             </div>
@@ -175,12 +166,12 @@ function TaskItem({
 
 function AddTaskInput({
   placeholder,
-  assignedTo,
+  assignedToMember,
   onAdd,
 }: {
   placeholder: string;
-  assignedTo: string | null;
-  onAdd: (title: string, assignedTo: string | null) => Promise<void>;
+  assignedToMember: number | null;
+  onAdd: (title: string, assignedToMember: number | null) => Promise<void>;
 }) {
   const [value, setValue] = useState("");
   const [adding, setAdding] = useState(false);
@@ -188,7 +179,7 @@ function AddTaskInput({
   const handleSubmit = async () => {
     if (!value.trim() || adding) return;
     setAdding(true);
-    await onAdd(value.trim(), assignedTo);
+    await onAdd(value.trim(), assignedToMember);
     setValue("");
     setAdding(false);
   };
@@ -215,28 +206,156 @@ function AddTaskInput({
   );
 }
 
+// ── Task List Section ──────────────────────────────────────────────────
+
+function TaskSection({
+  title,
+  tasks,
+  members,
+  addPlaceholder,
+  addAssignedToMember,
+  onToggle,
+  onDelete,
+  onAssign,
+  onAdd,
+  showCompleted,
+  onRemoveMember,
+}: {
+  title: string;
+  tasks: Task[];
+  members: Member[];
+  addPlaceholder: string;
+  addAssignedToMember: number | null;
+  onToggle: (id: number, completed: boolean) => void;
+  onDelete: (id: number) => void;
+  onAssign: (id: number, memberId: number | null) => void;
+  onAdd: (title: string, assignedToMember: number | null) => Promise<void>;
+  showCompleted: boolean;
+  onRemoveMember?: () => void;
+}) {
+  const visible = showCompleted ? tasks : tasks.filter((t) => !t.completed);
+  const completedCount = tasks.filter((t) => t.completed).length;
+  const totalCount = tasks.length;
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] text-gray-400">
+            {completedCount}/{totalCount} done
+          </span>
+          {onRemoveMember && (
+            <button
+              onClick={onRemoveMember}
+              className="text-[10px] text-red-400 hover:text-red-600 font-medium"
+              title="Remove this person"
+            >
+              Remove
+            </button>
+          )}
+        </div>
+      </div>
+      {visible.length === 0 ? (
+        <div className="px-4 py-6 text-center text-xs text-gray-400">
+          No tasks yet
+        </div>
+      ) : (
+        visible.map((task) => (
+          <TaskItem
+            key={task.id}
+            task={task}
+            members={members}
+            onToggle={onToggle}
+            onDelete={onDelete}
+            onAssign={onAssign}
+          />
+        ))
+      )}
+      <AddTaskInput
+        placeholder={addPlaceholder}
+        assignedToMember={addAssignedToMember}
+        onAdd={onAdd}
+      />
+    </div>
+  );
+}
+
+// ── Add Member Modal ───────────────────────────────────────────────────
+
+function AddMemberModal({
+  onAdd,
+  onClose,
+}: {
+  onAdd: (name: string) => Promise<void>;
+  onClose: () => void;
+}) {
+  const [name, setName] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!name.trim() || submitting) return;
+    setSubmitting(true);
+    await onAdd(name.trim());
+    setSubmitting(false);
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" onClick={onClose}>
+      <div
+        className="bg-white rounded-xl border border-gray-200 shadow-xl p-6 w-full max-w-sm mx-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 className="text-sm font-semibold text-gray-900 mb-4">Add a team member</h3>
+        <input
+          type="text"
+          placeholder="Name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+          className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/5 mb-4"
+          autoFocus
+        />
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={onClose}
+            className="px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={!name.trim() || submitting}
+            className="px-4 py-1.5 text-sm font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:opacity-40"
+          >
+            {submitting ? "Adding..." : "Add member"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Suggest Task Modal ─────────────────────────────────────────────────
 
 function SuggestTaskModal({
-  team,
-  currentUserId,
+  members,
   onSuggest,
   onClose,
 }: {
-  team: TeamMember[];
-  currentUserId: string;
-  onSuggest: (title: string, assignedTo: string) => Promise<void>;
+  members: Member[];
+  onSuggest: (title: string, memberId: number) => Promise<void>;
   onClose: () => void;
 }) {
   const [title, setTitle] = useState("");
-  const [targetUser, setTargetUser] = useState("");
+  const [targetMember, setTargetMember] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const others = team.filter((m) => m.id !== currentUserId);
 
   const handleSubmit = async () => {
-    if (!title.trim() || !targetUser || submitting) return;
+    if (!title.trim() || !targetMember || submitting) return;
     setSubmitting(true);
-    await onSuggest(title.trim(), targetUser);
+    await onSuggest(title.trim(), Number(targetMember));
     setSubmitting(false);
     onClose();
   };
@@ -258,14 +377,14 @@ function SuggestTaskModal({
           autoFocus
         />
         <select
-          value={targetUser}
-          onChange={(e) => setTargetUser(e.target.value)}
+          value={targetMember}
+          onChange={(e) => setTargetMember(e.target.value)}
           className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/5 mb-4 text-gray-700"
         >
           <option value="">Assign to...</option>
-          {others.map((m) => (
+          {members.map((m) => (
             <option key={m.id} value={m.id}>
-              {displayName(m)}
+              {m.name}
             </option>
           ))}
         </select>
@@ -278,7 +397,7 @@ function SuggestTaskModal({
           </button>
           <button
             onClick={handleSubmit}
-            disabled={!title.trim() || !targetUser || submitting}
+            disabled={!title.trim() || !targetMember || submitting}
             className="px-4 py-1.5 text-sm font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:opacity-40"
           >
             {submitting ? "Suggesting..." : "Suggest"}
@@ -289,141 +408,35 @@ function SuggestTaskModal({
   );
 }
 
-// ── Task List Section ──────────────────────────────────────────────────
-
-function TaskSection({
-  title,
-  tasks,
-  team,
-  currentUserId,
-  addPlaceholder,
-  addAssignedTo,
-  onToggle,
-  onDelete,
-  onAssign,
-  onAdd,
-  showCompleted,
-}: {
-  title: string;
-  tasks: Task[];
-  team: TeamMember[];
-  currentUserId: string;
-  addPlaceholder: string;
-  addAssignedTo: string | null;
-  onToggle: (id: number, completed: boolean) => void;
-  onDelete: (id: number) => void;
-  onAssign: (id: number, userId: string | null) => void;
-  onAdd: (title: string, assignedTo: string | null) => Promise<void>;
-  showCompleted: boolean;
-}) {
-  const visible = showCompleted ? tasks : tasks.filter((t) => !t.completed);
-  const completedCount = tasks.filter((t) => t.completed).length;
-  const totalCount = tasks.length;
-
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
-        <span className="text-[10px] text-gray-400">
-          {completedCount}/{totalCount} done
-        </span>
-      </div>
-      {visible.length === 0 ? (
-        <div className="px-4 py-6 text-center text-xs text-gray-400">
-          No tasks yet
-        </div>
-      ) : (
-        visible.map((task) => (
-          <TaskItem
-            key={task.id}
-            task={task}
-            team={team}
-            currentUserId={currentUserId}
-            onToggle={onToggle}
-            onDelete={onDelete}
-            onAssign={onAssign}
-          />
-        ))
-      )}
-      <AddTaskInput
-        placeholder={addPlaceholder}
-        assignedTo={addAssignedTo}
-        onAdd={onAdd}
-      />
-    </div>
-  );
-}
-
 // ── Main Page ──────────────────────────────────────────────────────────
 
 export default function WorkspacePage() {
   const { user, loading: authLoading } = useAuth();
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [team, setTeam] = useState<TeamMember[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showSuggest, setShowSuggest] = useState(false);
+  const [showAddMember, setShowAddMember] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
 
-  const fetchTasks = useCallback(async () => {
-    const token = await getToken();
-    if (!token) return;
-    const res = await fetch("/api/admin/tasks", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) return;
-    const data = await res.json();
-    setTasks(data.tasks);
-  }, []);
+  const shouldFetch = !authLoading && !!user;
 
-  const fetchTeam = useCallback(async () => {
-    // Fetch admin emails from the same env var the server uses
-    const token = await getToken();
-    if (!token) return;
-    // We'll get team info from profiles + auth — for now use the stats endpoint
-    // to get all users, but we really just need admin users.
-    // Simplification: fetch all profiles and filter to those who have tasks or are admin
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("user_id, name");
-    const { data: authData } = await supabase.auth.getUser(token);
-    const currentEmail = authData?.user?.email;
+  const { data: tasksData, mutate: mutateTasks, isLoading: tasksLoading } = useSWR(
+    shouldFetch ? "/api/admin/tasks" : null,
+    authedFetch,
+    { revalidateOnFocus: false, dedupingInterval: 30000 }
+  );
 
-    // Build team from profiles that have user data
-    if (profiles) {
-      // Also get emails from auth — we can only get the current user's email client-side
-      // For team display, we'll use profile names and fall back to user_id
-      const members: TeamMember[] = profiles
-        .filter((p) => p.name)
-        .map((p) => ({
-          id: p.user_id,
-          email: "",
-          name: p.name,
-        }));
+  const { data: membersData, mutate: mutateMembers, isLoading: membersLoading } = useSWR(
+    shouldFetch ? "/api/admin/workspace-members" : null,
+    authedFetch,
+    { revalidateOnFocus: false, dedupingInterval: 60000 }
+  );
 
-      // Ensure current user is in the list
-      if (authData?.user && !members.find((m) => m.id === authData.user!.id)) {
-        members.unshift({
-          id: authData.user.id,
-          email: currentEmail ?? "",
-          name: null,
-        });
-      }
+  const tasks: Task[] = tasksData?.tasks ?? [];
+  const members: Member[] = membersData?.members ?? [];
+  const loading = tasksLoading || membersLoading;
 
-      // Put current user's email on their record
-      const me = members.find((m) => m.id === authData?.user?.id);
-      if (me && currentEmail) me.email = currentEmail;
+  // ── Task actions ───────────────────────────────────────────────────
 
-      setTeam(members);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (authLoading || !user) return;
-    setLoading(true);
-    Promise.all([fetchTasks(), fetchTeam()]).finally(() => setLoading(false));
-  }, [authLoading, user, fetchTasks, fetchTeam]);
-
-  const addTask = async (title: string, assignedTo: string | null) => {
+  const addTask = async (title: string, assignedToMember: number | null) => {
     const token = await getToken();
     if (!token) return;
     const res = await fetch("/api/admin/tasks", {
@@ -432,75 +445,125 @@ export default function WorkspacePage() {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ title, assigned_to: assignedTo }),
+      body: JSON.stringify({ title, assigned_to_member: assignedToMember }),
     });
     if (res.ok) {
       const { task } = await res.json();
-      setTasks((prev) => [task, ...prev]);
+      mutateTasks(
+        (prev: { tasks: Task[] } | undefined) =>
+          prev ? { tasks: [task, ...prev.tasks] } : { tasks: [task] },
+        false
+      );
     }
   };
 
   const toggleTask = async (id: number, completed: boolean) => {
-    // Optimistic update
-    setTasks((prev) =>
-      prev.map((t) =>
-        t.id === id
-          ? { ...t, completed, completed_at: completed ? new Date().toISOString() : null }
-          : t
-      )
+    mutateTasks(
+      (prev: { tasks: Task[] } | undefined) =>
+        prev
+          ? {
+              tasks: prev.tasks.map((t) =>
+                t.id === id
+                  ? { ...t, completed, completed_at: completed ? new Date().toISOString() : null }
+                  : t
+              ),
+            }
+          : prev,
+      false
     );
     const token = await getToken();
     if (!token) return;
     await fetch("/api/admin/tasks", {
       method: "PATCH",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify({ id, completed }),
     });
   };
 
   const deleteTask = async (id: number) => {
-    setTasks((prev) => prev.filter((t) => t.id !== id));
+    mutateTasks(
+      (prev: { tasks: Task[] } | undefined) =>
+        prev ? { tasks: prev.tasks.filter((t) => t.id !== id) } : prev,
+      false
+    );
     const token = await getToken();
     if (!token) return;
     await fetch("/api/admin/tasks", {
       method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
     });
   };
 
-  const assignTask = async (id: number, userId: string | null) => {
-    setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, assigned_to: userId } : t))
+  const assignTask = async (id: number, memberId: number | null) => {
+    mutateTasks(
+      (prev: { tasks: Task[] } | undefined) =>
+        prev
+          ? { tasks: prev.tasks.map((t) => (t.id === id ? { ...t, assigned_to_member: memberId } : t)) }
+          : prev,
+      false
     );
     const token = await getToken();
     if (!token) return;
     await fetch("/api/admin/tasks", {
       method: "PATCH",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ id, assigned_to: userId }),
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ id, assigned_to_member: memberId }),
     });
   };
 
-  const suggestTask = async (title: string, assignedTo: string) => {
-    await addTask(title, assignedTo);
+  // ── Member actions ─────────────────────────────────────────────────
+
+  const addMember = async (name: string) => {
+    const token = await getToken();
+    if (!token) return;
+    const res = await fetch("/api/admin/workspace-members", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+    if (res.ok) {
+      const { member } = await res.json();
+      mutateMembers(
+        (prev: { members: Member[] } | undefined) =>
+          prev ? { members: [...prev.members, member] } : { members: [member] },
+        false
+      );
+    }
   };
 
-  // Separate tasks
-  const companyTasks = tasks.filter((t) => !t.assigned_to);
-  const myTasks = tasks.filter((t) => t.assigned_to === user?.id);
-  const otherMembers = team.filter((m) => m.id !== user?.id);
+  const removeMember = async (memberId: number, memberName: string) => {
+    if (!confirm(`Remove ${memberName}? Their tasks will be unassigned.`)) return;
+    // Optimistic: remove member + unassign their tasks
+    mutateMembers(
+      (prev: { members: Member[] } | undefined) =>
+        prev ? { members: prev.members.filter((m) => m.id !== memberId) } : prev,
+      false
+    );
+    mutateTasks(
+      (prev: { tasks: Task[] } | undefined) =>
+        prev
+          ? {
+              tasks: prev.tasks.map((t) =>
+                t.assigned_to_member === memberId ? { ...t, assigned_to_member: null } : t
+              ),
+            }
+          : prev,
+      false
+    );
+    const token = await getToken();
+    if (!token) return;
+    await fetch("/api/admin/workspace-members", {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ id: memberId }),
+    });
+  };
 
-  // Page-level tabs
+  // ── Derived data ───────────────────────────────────────────────────
+
+  const companyTasks = tasks.filter((t) => !t.assigned_to_member);
+
   const pages = [
     { label: "Admin Dashboard", href: "/admin" },
     { label: "Workspace", href: "/workspace" },
@@ -528,6 +591,12 @@ export default function WorkspacePage() {
               }`}
             >
               {showCompleted ? "Hide completed" : "Show completed"}
+            </button>
+            <button
+              onClick={() => setShowAddMember(true)}
+              className="text-xs font-medium px-3 py-1.5 border border-gray-200 text-gray-500 hover:border-gray-300 rounded-lg transition-colors"
+            >
+              Add person
             </button>
             <button
               onClick={() => setShowSuggest(true)}
@@ -565,10 +634,9 @@ export default function WorkspacePage() {
             <TaskSection
               title="Company"
               tasks={companyTasks}
-              team={team}
-              currentUserId={user?.id ?? ""}
+              members={members}
               addPlaceholder="Add a company task..."
-              addAssignedTo={null}
+              addAssignedToMember={null}
               onToggle={toggleTask}
               onDelete={deleteTask}
               onAssign={assignTask}
@@ -576,52 +644,49 @@ export default function WorkspacePage() {
               showCompleted={showCompleted}
             />
 
-            {/* My tasks */}
-            <TaskSection
-              title="My tasks"
-              tasks={myTasks}
-              team={team}
-              currentUserId={user?.id ?? ""}
-              addPlaceholder="Add a personal task..."
-              addAssignedTo={user?.id ?? null}
-              onToggle={toggleTask}
-              onDelete={deleteTask}
-              onAssign={assignTask}
-              onAdd={addTask}
-              showCompleted={showCompleted}
-            />
-
-            {/* Other team members */}
-            {otherMembers.map((member) => {
+            {/* Per-member task sections */}
+            {members.map((member) => {
               const memberTasks = tasks.filter(
-                (t) => t.assigned_to === member.id
+                (t) => t.assigned_to_member === member.id
               );
               return (
                 <TaskSection
                   key={member.id}
-                  title={`${displayName(member)}'s tasks`}
+                  title={`${member.name}'s tasks`}
                   tasks={memberTasks}
-                  team={team}
-                  currentUserId={user?.id ?? ""}
-                  addPlaceholder={`Suggest a task to ${displayName(member)}...`}
-                  addAssignedTo={member.id}
+                  members={members}
+                  addPlaceholder={`Add a task for ${member.name}...`}
+                  addAssignedToMember={member.id}
                   onToggle={toggleTask}
                   onDelete={deleteTask}
                   onAssign={assignTask}
                   onAdd={addTask}
                   showCompleted={showCompleted}
+                  onRemoveMember={() => removeMember(member.id, member.name)}
                 />
               );
             })}
+
+            {members.length === 0 && (
+              <div className="text-center py-8 text-sm text-gray-400">
+                No team members yet. Click &quot;Add person&quot; to get started.
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {showSuggest && user && (
+      {showAddMember && (
+        <AddMemberModal
+          onAdd={addMember}
+          onClose={() => setShowAddMember(false)}
+        />
+      )}
+
+      {showSuggest && (
         <SuggestTaskModal
-          team={team}
-          currentUserId={user.id}
-          onSuggest={suggestTask}
+          members={members}
+          onSuggest={(title, memberId) => addTask(title, memberId)}
           onClose={() => setShowSuggest(false)}
         />
       )}

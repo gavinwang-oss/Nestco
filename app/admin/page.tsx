@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import useSWR from "swr";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import Navbar from "@/components/Navbar";
@@ -334,43 +335,39 @@ function ListingsTab({
 
 // ── Main Page ─────────────────────────────────────────────────────────
 
+async function authedFetch(url: string) {
+  const token = await getToken();
+  if (!token) throw new Error("No token");
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Fetch failed");
+  return res.json();
+}
+
 export default function AdminPage() {
   const { user, loading: authLoading } = useAuth();
   const [tab, setTab] = useState<Tab>("overview");
-  const [counts, setCounts] = useState<Counts | null>(null);
-  const [timeSeries, setTimeSeries] = useState<TimeSeries | null>(null);
-  const [listings, setListings] = useState<Listing[]>([]);
-  const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<number | null>(null);
 
-  const fetchStats = useCallback(async () => {
-    const token = await getToken();
-    if (!token) return;
-    const res = await fetch("/api/admin/stats", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) return;
-    const data = await res.json();
-    setCounts(data.counts);
-    setTimeSeries(data.timeSeries);
-  }, []);
+  const shouldFetch = !authLoading && !!user;
 
-  const fetchListings = useCallback(async () => {
-    const token = await getToken();
-    if (!token) return;
-    const res = await fetch("/api/admin/listings", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) return;
-    const data = await res.json();
-    setListings(data.listings);
-  }, []);
+  const { data: statsData, isLoading: statsLoading } = useSWR(
+    shouldFetch ? "/api/admin/stats" : null,
+    authedFetch,
+    { revalidateOnFocus: false, dedupingInterval: 30000 }
+  );
 
-  useEffect(() => {
-    if (authLoading || !user) return;
-    setLoading(true);
-    Promise.all([fetchStats(), fetchListings()]).finally(() => setLoading(false));
-  }, [authLoading, user, fetchStats, fetchListings]);
+  const { data: listingsData, isLoading: listingsLoading, mutate: mutateListings } = useSWR(
+    shouldFetch ? "/api/admin/listings" : null,
+    authedFetch,
+    { revalidateOnFocus: false, dedupingInterval: 30000 }
+  );
+
+  const counts = statsData?.counts ?? null;
+  const timeSeries = statsData?.timeSeries ?? null;
+  const listings: Listing[] = listingsData?.listings ?? [];
+  const loading = statsLoading || listingsLoading;
 
   const handleDelete = async (listingId: number) => {
     if (!confirm("Remove this listing? This cannot be undone.")) return;
@@ -386,7 +383,11 @@ export default function AdminPage() {
       body: JSON.stringify({ listingId }),
     });
     if (res.ok) {
-      setListings((prev) => prev.filter((l) => l.id !== listingId));
+      mutateListings(
+        (prev: { listings: Listing[] } | undefined) =>
+          prev ? { listings: prev.listings.filter((l) => l.id !== listingId) } : prev,
+        false
+      );
     }
     setDeleting(null);
   };
@@ -409,10 +410,7 @@ export default function AdminPage() {
           </div>
           <button
             onClick={() => {
-              setLoading(true);
-              Promise.all([fetchStats(), fetchListings()]).finally(() =>
-                setLoading(false)
-              );
+              mutateListings();
             }}
             className="text-xs font-medium text-gray-500 hover:text-gray-900 px-3 py-1.5 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
           >

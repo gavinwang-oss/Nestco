@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthModal, { AuthTab } from "@/components/AuthModal";
-import { isAdminEmail } from "@/lib/admin";
 import { supabase } from "@/lib/supabase";
 
 export default function Navbar() {
@@ -14,7 +13,6 @@ export default function Navbar() {
   const [authTab, setAuthTab] = useState<AuthTab>("login");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const isAdmin = isAdminEmail(user?.email);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -91,29 +89,27 @@ export default function Navbar() {
           <div className="flex items-center gap-0.5">
             {user ? (
               <>
-                {isAdmin && navLink("/browse", "Browse")}
-                {isAdmin && navLink("/requests", "Requests")}
+                {navLink("/browse", "Browse")}
+                {navLink("/requests", "Requests")}
                 {navLink("/my-listings", "My listings")}
-                {isAdmin && navLink("/saved", "Saved")}
-                {isAdmin && navLink("/inbox", "Inbox", unreadCount)}
+                {navLink("/saved", "Saved")}
+                {navLink("/inbox", "Inbox", unreadCount)}
 
                 {/* Divider */}
                 <div className="w-px h-4 bg-black/[0.08] mx-2" />
 
-                {/* Avatar → Profile (admin only) */}
-                {isAdmin && (
-                  <Link
-                    href="/profile"
-                    title="Profile"
-                    className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-all ${
-                      pathname === "/profile"
-                        ? "bg-gray-900 text-white"
-                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                    }`}
-                  >
-                    {initials}
-                  </Link>
-                )}
+                {/* Avatar → Profile */}
+                <Link
+                  href="/profile"
+                  title="Profile"
+                  className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-all ${
+                    pathname === "/profile"
+                      ? "bg-gray-900 text-white"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+                >
+                  {initials}
+                </Link>
 
                 {/* Sign out */}
                 <button
@@ -156,19 +152,17 @@ export default function Navbar() {
           <div className="flex items-center gap-1">
             {user ? (
               <>
-                {isAdmin && (
-                  <Link
-                    href="/profile"
-                    title="Profile"
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-all ${
-                      pathname === "/profile"
-                        ? "bg-gray-900 text-white"
-                        : "bg-gray-100 text-gray-600"
-                    }`}
-                  >
-                    {initials}
-                  </Link>
-                )}
+                <Link
+                  href="/profile"
+                  title="Profile"
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-all ${
+                    pathname === "/profile"
+                      ? "bg-gray-900 text-white"
+                      : "bg-gray-100 text-gray-600"
+                  }`}
+                >
+                  {initials}
+                </Link>
                 <button
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                   className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-black/[0.04] transition-colors cursor-pointer"
@@ -201,35 +195,31 @@ export default function Navbar() {
       {mobileMenuOpen && user && (
         <div className="sm:hidden fixed top-[52px] left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-b border-black/[0.06] shadow-lg">
           <div className="px-4 py-3 flex flex-col gap-1">
-            {isAdmin && (
-              <>
-                <Link href="/browse" onClick={() => setMobileMenuOpen(false)}
-                  className={`px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${pathname === "/browse" ? "bg-black/[0.06] text-gray-900" : "text-gray-600 hover:bg-black/[0.04]"}`}>
-                  Browse
-                </Link>
-                <Link href="/requests" onClick={() => setMobileMenuOpen(false)}
-                  className={`px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${pathname === "/requests" ? "bg-black/[0.06] text-gray-900" : "text-gray-600 hover:bg-black/[0.04]"}`}>
-                  Requests
-                </Link>
-                <Link href="/saved" onClick={() => setMobileMenuOpen(false)}
-                  className={`px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${pathname === "/saved" ? "bg-black/[0.06] text-gray-900" : "text-gray-600 hover:bg-black/[0.04]"}`}>
-                  Saved
-                </Link>
-                <Link href="/inbox" onClick={() => setMobileMenuOpen(false)}
-                  className={`relative px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${pathname === "/inbox" ? "bg-black/[0.06] text-gray-900" : "text-gray-600 hover:bg-black/[0.04]"}`}>
-                  Inbox
-                  {unreadCount > 0 && (
-                    <span className="absolute top-2 right-2 min-w-[16px] h-4 px-1 bg-black text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
-                      {unreadCount > 9 ? "9+" : unreadCount}
-                    </span>
-                  )}
-                </Link>
-                <Link href="/profile" onClick={() => setMobileMenuOpen(false)}
-                  className={`px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${pathname === "/profile" ? "bg-black/[0.06] text-gray-900" : "text-gray-600 hover:bg-black/[0.04]"}`}>
-                  Profile
-                </Link>
-              </>
-            )}
+            <Link href="/browse" onClick={() => setMobileMenuOpen(false)}
+              className={`px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${pathname === "/browse" ? "bg-black/[0.06] text-gray-900" : "text-gray-600 hover:bg-black/[0.04]"}`}>
+              Browse
+            </Link>
+            <Link href="/requests" onClick={() => setMobileMenuOpen(false)}
+              className={`px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${pathname === "/requests" ? "bg-black/[0.06] text-gray-900" : "text-gray-600 hover:bg-black/[0.04]"}`}>
+              Requests
+            </Link>
+            <Link href="/saved" onClick={() => setMobileMenuOpen(false)}
+              className={`px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${pathname === "/saved" ? "bg-black/[0.06] text-gray-900" : "text-gray-600 hover:bg-black/[0.04]"}`}>
+              Saved
+            </Link>
+            <Link href="/inbox" onClick={() => setMobileMenuOpen(false)}
+              className={`relative px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${pathname === "/inbox" ? "bg-black/[0.06] text-gray-900" : "text-gray-600 hover:bg-black/[0.04]"}`}>
+              Inbox
+              {unreadCount > 0 && (
+                <span className="absolute top-2 right-2 min-w-[16px] h-4 px-1 bg-black text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+            </Link>
+            <Link href="/profile" onClick={() => setMobileMenuOpen(false)}
+              className={`px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${pathname === "/profile" ? "bg-black/[0.06] text-gray-900" : "text-gray-600 hover:bg-black/[0.04]"}`}>
+              Profile
+            </Link>
             <Link href="/my-listings" onClick={() => setMobileMenuOpen(false)}
               className={`px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${pathname === "/my-listings" ? "bg-black/[0.06] text-gray-900" : "text-gray-600 hover:bg-black/[0.04]"}`}>
               My listings
