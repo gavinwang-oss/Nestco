@@ -91,7 +91,7 @@ export default function Create() {
 
   useEffect(() => {
     if (!loading && !user) {
-      router.push("/browse");
+      router.push("/");
     }
   }, [user, loading, router]);
 

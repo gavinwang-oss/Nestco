@@ -1,16 +1,8 @@
-"use client";
+import BrowseExperience from "@/components/BrowseExperience";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-
-// The homepage is the browse page. Unauthenticated visitors are sent to
-// /login by RouteGuard; authenticated visitors land on /browse.
+// The homepage IS the browse page — rendered at the root so the URL stays at
+// nestco.ai (no /browse suffix). Unauthenticated visitors are sent to /login
+// by RouteGuard.
 export default function Home() {
-  const router = useRouter();
-
-  useEffect(() => {
-    router.replace("/browse");
-  }, [router]);
-
-  return null;
+  return <BrowseExperience />;
 }

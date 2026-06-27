@@ -375,7 +375,7 @@ export default function MyListings() {
   useEffect(() => {
     if (loading) return;
     if (!user) {
-      router.replace("/browse");
+      router.replace("/");
       return;
     }
 

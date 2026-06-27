@@ -33,7 +33,7 @@ export default function Navbar() {
   const initials = user?.email?.[0].toUpperCase() ?? "?";
 
   const navLink = (href: string, label: string, badge?: number) => {
-    const active = pathname === href || (href !== "/browse" && pathname.startsWith(href));
+    const active = pathname === href || (href !== "/" && pathname.startsWith(href));
     return (
       <Link
         href={href}
@@ -56,7 +56,7 @@ export default function Navbar() {
 
   // Mobile icon-only nav link
   const mobileNavLink = (href: string, icon: React.ReactNode, label: string) => {
-    const active = pathname === href || (href !== "/browse" && pathname.startsWith(href));
+    const active = pathname === href || (href !== "/" && pathname.startsWith(href));
     return (
       <Link
         href={href}
@@ -78,7 +78,7 @@ export default function Navbar() {
       {/* Desktop navbar */}
       <nav className="hidden sm:flex h-13 border-b border-black/[0.06] bg-white/80 backdrop-blur-md items-center px-5 justify-between flex-shrink-0 sticky top-0 z-40">
         {/* Logo */}
-        <Link href="/browse" className="flex items-center gap-2 cursor-pointer flex-shrink-0">
+        <Link href="/" className="flex items-center gap-2 cursor-pointer flex-shrink-0">
           <div className="w-7 h-7 bg-black rounded-md flex items-center justify-center">
             <span className="text-white text-xs font-bold">N</span>
           </div>
@@ -89,7 +89,7 @@ export default function Navbar() {
           <div className="flex items-center gap-0.5">
             {user ? (
               <>
-                {navLink("/browse", "Browse")}
+                {navLink("/", "Browse")}
                 {navLink("/requests", "Requests")}
                 {navLink("/my-listings", "My listings")}
                 {navLink("/saved", "Saved")}
@@ -141,7 +141,7 @@ export default function Navbar() {
 
       {/* Mobile top bar */}
       <nav className="sm:hidden h-13 border-b border-black/[0.06] bg-white/90 backdrop-blur-md flex items-center px-4 justify-between flex-shrink-0 sticky top-0 z-40">
-        <Link href="/browse" className="flex items-center gap-2 cursor-pointer">
+        <Link href="/" className="flex items-center gap-2 cursor-pointer">
           <div className="w-7 h-7 bg-black rounded-md flex items-center justify-center">
             <span className="text-white text-xs font-bold">N</span>
           </div>
@@ -195,8 +195,8 @@ export default function Navbar() {
       {mobileMenuOpen && user && (
         <div className="sm:hidden fixed top-[52px] left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-b border-black/[0.06] shadow-lg">
           <div className="px-4 py-3 flex flex-col gap-1">
-            <Link href="/browse" onClick={() => setMobileMenuOpen(false)}
-              className={`px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${pathname === "/browse" ? "bg-black/[0.06] text-gray-900" : "text-gray-600 hover:bg-black/[0.04]"}`}>
+            <Link href="/" onClick={() => setMobileMenuOpen(false)}
+              className={`px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${pathname === "/" ? "bg-black/[0.06] text-gray-900" : "text-gray-600 hover:bg-black/[0.04]"}`}>
               Browse
             </Link>
             <Link href="/requests" onClick={() => setMobileMenuOpen(false)}

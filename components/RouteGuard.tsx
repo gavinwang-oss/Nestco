@@ -11,7 +11,7 @@ const PUBLIC_PATHS = ["/login", "/dev-login", "/demo", "/tos", "/auth/callback"]
 // Internal-only routes — restricted to admin emails
 const ADMIN_PATHS = ["/admin", "/workspace"];
 
-// Everything else (/browse, /inbox, /requests, /saved, /create, /profile,
+// Everything else (/ [browse], /inbox, /requests, /saved, /create, /profile,
 // /my-listings, /listings) requires any authenticated user.
 
 export default function RouteGuard({ children }: { children: React.ReactNode }) {
@@ -31,7 +31,7 @@ export default function RouteGuard({ children }: { children: React.ReactNode }) 
       return;
     }
     // Authenticated but not admin → keep out of admin routes
-    if (isAdminPath && !isAdmin) router.replace("/browse");
+    if (isAdminPath && !isAdmin) router.replace("/");
   }, [loading, user, pathname, isPublic, isAdminPath, isAdmin, router]);
 
   // Public routes — always render immediately

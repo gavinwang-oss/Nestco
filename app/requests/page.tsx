@@ -282,7 +282,7 @@ function RequestFormModal({ onClose, onSuccess }: { onClose: () => void; onSucce
             <div className="flex gap-3 mt-2">
               {matchCount > 0 && (
                 <Link
-                  href={`/browse?listings=${matchListingIds.join(",")}`}
+                  href={`/?listings=${matchListingIds.join(",")}`}
                   onClick={onClose}
                   className="px-5 py-2.5 bg-black text-white text-sm font-semibold rounded-full hover:bg-gray-800 transition-colors"
                 >
@@ -624,7 +624,7 @@ export default function RequestsPage() {
             </button>
           ) : (
             <Link
-              href="/browse"
+              href="/"
               className="flex-shrink-0 px-4 sm:px-5 py-2.5 min-h-[44px] flex items-center bg-black text-white text-sm font-semibold rounded-full hover:bg-gray-800 transition-all"
             >
               Sign in

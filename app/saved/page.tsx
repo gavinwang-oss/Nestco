@@ -57,7 +57,7 @@ export default function Saved() {
 
   useEffect(() => {
     if (loading) return;
-    if (!user) { router.replace("/browse"); return; }
+    if (!user) { router.replace("/"); return; }
 
     supabase
       .from("saved_listings")
@@ -126,7 +126,7 @@ export default function Saved() {
                     disabled={compareSelected.length !== 2}
                     onClick={() => {
                       sessionStorage.setItem("nestco_compare", compareSelected.join(","));
-                      router.push("/browse");
+                      router.push("/");
                     }}
                     className="px-4 py-2.5 min-h-[44px] bg-black text-white text-sm font-semibold rounded-full hover:bg-gray-800 transition-colors cursor-pointer disabled:opacity-40"
                   >
@@ -157,7 +157,7 @@ export default function Saved() {
               You haven&apos;t saved any listings yet.<br />Swipe right or click the bookmark icon on any listing.
             </p>
             <button
-              onClick={() => router.push("/browse")}
+              onClick={() => router.push("/")}
               className="px-5 py-2.5 bg-black text-white text-sm font-semibold rounded-full hover:bg-gray-800 transition-colors cursor-pointer"
             >
               Browse listings
@@ -201,7 +201,7 @@ export default function Saved() {
                   {/* Photo */}
                   <div
                     className={`relative h-40 ${compareMode ? "" : "cursor-pointer"} ${hasPhoto ? "" : `bg-gradient-to-br ${gradient}`}`}
-                    onClick={compareMode ? undefined : () => router.push(`/browse?listing=${listing.id}`)}
+                    onClick={compareMode ? undefined : () => router.push(`/?listing=${listing.id}`)}
                   >
                     {hasPhoto && (
                       <img src={listing.photos[0]} alt={listing.address} className="w-full h-full object-cover" />
@@ -228,7 +228,7 @@ export default function Saved() {
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div
                         className="flex-1 cursor-pointer"
-                        onClick={() => router.push(`/browse?listing=${listing.id}`)}
+                        onClick={() => router.push(`/?listing=${listing.id}`)}
                       >
                         <h3 className="font-semibold text-gray-900 text-sm leading-tight">{listing.title ?? listing.address}</h3>
                         {listing.title && <p className="text-[10px] text-gray-400">{listing.address}</p>}
@@ -250,7 +250,7 @@ export default function Saved() {
                     {!compareMode && (
                       <div className="flex gap-2">
                         <button
-                          onClick={() => router.push(`/browse?listing=${listing.id}`)}
+                          onClick={() => router.push(`/?listing=${listing.id}`)}
                           className="flex-1 py-2 bg-black text-white text-xs font-semibold rounded-full hover:bg-gray-800 transition-colors cursor-pointer"
                         >
                           View listing

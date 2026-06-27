@@ -9,7 +9,7 @@ function AuthCallbackInner() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    const next = searchParams.get("next") ?? "/browse";
+    const next = searchParams.get("next") ?? "/";
     const code = searchParams.get("code");
 
     // Handle PKCE code exchange flow

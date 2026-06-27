@@ -203,7 +203,7 @@ export default function Inbox() {
 
   useEffect(() => {
     if (loading) return;
-    if (!user) { router.replace("/browse"); return; }
+    if (!user) { router.replace("/"); return; }
     fetchData();
 
     // Messages subscription
@@ -619,7 +619,7 @@ export default function Inbox() {
                           <span className="hidden sm:inline">{isMutualMatch ? "Matched" : myInterested ? "Interested" : "Match"}</span>
                         </button>
                         <Link
-                          href={`/browse?listing=${selectedConv.listing_id}`}
+                          href={`/?listing=${selectedConv.listing_id}`}
                           className="text-xs text-gray-400 hover:text-gray-700 transition-colors hidden sm:inline"
                         >
                           View →
@@ -697,7 +697,7 @@ export default function Inbox() {
                 return (
                   <Link
                     key={notif.id}
-                    href={isRequestMatch ? "/requests" : `/browse?listing=${notif.listing_id}`}
+                    href={isRequestMatch ? "/requests" : `/?listing=${notif.listing_id}`}
                     className={`block bg-white rounded-2xl border shadow-sm p-5 hover:shadow-md transition-all ${notif.read ? "border-black/[0.06]" : "border-black/[0.12]"}`}
                   >
                     <div className="flex items-start justify-between gap-3">

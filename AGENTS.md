@@ -21,8 +21,8 @@ Nestco is a UC Berkeley student sublet marketplace. Students can browse listings
 ## Key pages
 | Route | File | Purpose |
 |---|---|---|
-| `/` | `app/page.tsx` | Redirects to `/browse` (the homepage). Unauthenticated visitors are sent to `/login` by `RouteGuard`. |
-| `/browse` | `app/browse/page.tsx` | Main page — listing grid, AI chat panel, detail panel, compare mode. Shows profile completion banner if profile is incomplete. Expired listings filtered out. Includes `<OnboardingTooltip>` and `<SwipeTutorial>`. |
+| `/` | `app/page.tsx` → `components/BrowseExperience.tsx` | **The homepage and main page** — listing grid, AI chat panel, detail panel, compare mode. URL stays at root (no `/browse` suffix). `app/page.tsx` just renders `<BrowseExperience />` (the implementation, a client component). Shows profile completion banner if profile is incomplete. Expired listings filtered out. Includes `<OnboardingTooltip>` and `<SwipeTutorial>`. Reads `?listing=<id>` to open a detail panel directly. Unauthenticated visitors are sent to `/login` by `RouteGuard`. |
+| `/browse` | `app/browse/page.tsx` | Redirect-only alias for `/`. Client-side `router.replace` to `/`, preserving any query string (e.g. `?listing=123`) so old links, bookmarks, and emails keep working. |
 | `/create` | `app/create/page.tsx` | Post a new listing (multi-step form with photo upload) |
 | `/inbox` | `app/inbox/page.tsx` | Two-panel DM interface — conversation list left, thread right. Includes match mechanic. |
 | `/requests` | `app/requests/page.tsx` | Browse and post housing requests |
@@ -32,7 +32,7 @@ Nestco is a UC Berkeley student sublet marketplace. Students can browse listings
 | `/tos` | `app/tos/page.tsx` | Terms of Service page. Contact email: support@nestco.ai |
 | `/login` | `app/login/page.tsx` | Standalone magic link login page — sends OTP via `signInWithOtp` with `shouldCreateUser: false`. For existing users only (including magic-link-only listers who have no password). |
 | `/dev-login` | `app/dev-login/page.tsx` | Dev-only login tool (returns null in production). Shows buttons for each dev email, calls `/api/dev-login` to generate a magic link without sending an email. |
-| `/auth/callback` | `app/auth/callback/page.tsx` | Auth callback — reads `?next=` param (defaults to `/browse`) and redirects after SIGNED_IN. Uses both `onAuthStateChange` and `getSession()` fallback to fix race condition where SIGNED_IN fires before listener registers. |
+| `/auth/callback` | `app/auth/callback/page.tsx` | Auth callback — reads `?next=` param (defaults to `/`) and redirects after SIGNED_IN. Uses both `onAuthStateChange` and `getSession()` fallback to fix race condition where SIGNED_IN fires before listener registers. |
 | `/admin`, `/workspace` | `app/admin/page.tsx`, `app/workspace/page.tsx` | Internal-only dashboards. Restricted to admin emails by `RouteGuard`. |
 
 ## Key API routes
@@ -78,7 +78,7 @@ The browse page stores a session token in a `useRef` (`sessionTokenRef`) to avoi
 Authenticated users post listings via the in-app `/create` multi-step form (photos compressed client-side, then uploaded to `listing-photos/`). The old pre-account waitlist + magic-link "publish your listing" flow was removed at launch.
 
 ### Auth callback routing
-`/auth/callback` reads `?next=` query param (defaults to `/browse`). Uses both `onAuthStateChange` and `getSession()` as fallback in case the SIGNED_IN event fires before the listener is registered. Wrapped in Suspense boundary (required by Next.js for `useSearchParams`).
+`/auth/callback` reads `?next=` query param (defaults to `/`). Uses both `onAuthStateChange` and `getSession()` as fallback in case the SIGNED_IN event fires before the listener is registered. Wrapped in Suspense boundary (required by Next.js for `useSearchParams`).
 
 ### Privacy / match model
 - Names are hidden until `matched_at` is set on the `matches` record.
@@ -95,7 +95,7 @@ Authenticated users post listings via the in-app `/create` multi-step form (phot
 - Other party's interest is hidden until match is mutual — you can't see if they're interested until you're both interested.
 
 ### Listing types
-Internal values: `"Private Room"`, `"Shared Room"`, `"Entire Studio"`, `"Entire 1BR"`, `"Entire 2BR"`. Use `formatType()` in browse/page.tsx for display labels.
+Internal values: `"Private Room"`, `"Shared Room"`, `"Entire Studio"`, `"Entire 1BR"`, `"Entire 2BR"`. Use `formatType()` in `components/BrowseExperience.tsx` for display labels.
 
 ### AI chat response format
 The chat API always returns raw JSON (not markdown). Claude (`claude-haiku-4-5`) returns:
@@ -123,7 +123,7 @@ The EditModal in `/my-listings` supports ←/→ buttons on photo thumbnails to 
 Photos are compressed client-side before upload to handle large files (e.g. HEIC from iPhones, high-res camera shots) that would exceed Vercel's 4.5MB request limit. `lib/imageUtils.ts` `toJpegBlob()` resizes to max 1920px wide, 80% JPEG quality using canvas. Used in the `/create` form and the `/my-listings` edit modal. (The server-side `sharp` pass was removed with the waitlist route; `sharp` remains a dependency but is no longer used at runtime.)
 
 ### Photo lightbox
-Clicking a photo in the detail panel opens a fullscreen lightbox overlay (`fixed inset-0 z-[9999]`). Arrow navigation, dot indicators, close via X button, click outside, or Escape key. Implemented directly inside the `DetailPanel` component in `app/browse/page.tsx` using local `lightboxOpen` state.
+Clicking a photo in the detail panel opens a fullscreen lightbox overlay (`fixed inset-0 z-[9999]`). Arrow navigation, dot indicators, close via X button, click outside, or Escape key. Implemented directly inside the `DetailPanel` component in `components/BrowseExperience.tsx` using local `lightboxOpen` state.
 
 ### Message sending flow
 1. User clicks "Ask AI to draft" on a listing detail panel → AI returns `draftContent`
@@ -142,10 +142,11 @@ Conversations are grouped by `${listing_id}__${other_user_id}` from the current 
 The `/api/match-requests` endpoint verifies the Bearer token, fetches the listing, and checks `listing.user_id === user.id` before proceeding. Returns 401/403 otherwise.
 
 ## Navbar / access model
-- The app is launched: any authenticated user can access Browse, Requests, My listings, Saved, Inbox, and Profile — all shown in `Navbar.tsx` (desktop + mobile).
+- The app is launched: any authenticated user can access Browse (`/`), Requests, My listings, Saved, Inbox, and Profile — all shown in `Navbar.tsx` (desktop + mobile). The logo and the "Browse" link point to `/`.
+- **Canonical browse URL is `/`** (the root), not `/browse`. All internal navigation uses `/` and `/?listing=<id>`; `/browse` only exists as a redirect. When updating links, point to `/`, not `/browse`.
 - `RouteGuard.tsx`:
   - `PUBLIC_PATHS` (no login): `/login`, `/dev-login`, `/demo`, `/tos`, `/auth/callback`.
-  - `ADMIN_PATHS` (admin emails only, via `isAdminEmail`): `/admin`, `/workspace`. Non-admins are bounced to `/browse`.
+  - `ADMIN_PATHS` (admin emails only, via `isAdminEmail`): `/admin`, `/workspace`. Non-admins are bounced to `/`.
   - Everything else requires authentication; unauthenticated visitors are redirected to `/login`.
 - Unauthenticated users see a "Log in" link (href="/login") in the Navbar (desktop + mobile).
 - `AuthModal` (password-based) still exists and is rendered by `Navbar`, but has no trigger. The primary login path for all users is `/login` (magic link).

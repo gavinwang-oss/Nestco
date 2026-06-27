@@ -32,7 +32,7 @@ export default function ProfilePage() {
   useEffect(() => {
     if (loading) return;
     if (!user) {
-      router.replace("/browse");
+      router.replace("/");
       return;
     }
 

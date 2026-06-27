@@ -163,7 +163,7 @@ Pets required: ${request.pets != null ? (request.pets ? "Yes" : "No") : "Not spe
                   <h1 style="font-size: 22px; font-weight: 700; color: #0f0f0f; margin: 0 0 8px;">New listing match</h1>
                   <p style="font-size: 15px; color: #555; margin: 0 0 8px; line-height: 1.5;">A new listing matches your housing request: <strong>${listing.address}</strong></p>
                   <p style="font-size: 14px; color: #777; margin: 0 0 28px; line-height: 1.5;">${reason}</p>
-                  <a href="${appUrl}/browse?listing=${listing.id}" style="display: inline-block; background: #000; color: #fff; text-decoration: none; font-size: 14px; font-weight: 600; padding: 12px 24px; border-radius: 100px;">View listing →</a>
+                  <a href="${appUrl}/?listing=${listing.id}" style="display: inline-block; background: #000; color: #fff; text-decoration: none; font-size: 14px; font-weight: 600; padding: 12px 24px; border-radius: 100px;">View listing →</a>
                   <p style="font-size: 12px; color: #aaa; margin-top: 40px;"><a href="${appUrl}" style="color: #aaa;">nestco.ai</a></p>
                 </div>`,
             }),
