@@ -20,16 +20,13 @@ export default function AboutPage() {
         </div>
 
         <div className="bg-white rounded-2xl border border-black/[0.06] shadow-sm p-7 space-y-6 text-sm text-gray-700 leading-relaxed">
-          <section>
+          <section className="space-y-4">
+            <h2 className="text-base font-semibold text-gray-900 mb-2">Why we made this</h2>
             <p>
               We&apos;re a small group of UC Berkeley students who built Nestco as a free resource to help fellow students navigate housing at Berkeley. Finding a sublet here is stressful — scattered across group chats, Facebook groups, and last-minute listings — and we wanted to make it simpler.
             </p>
-          </section>
-
-          <section>
-            <h2 className="text-base font-semibold text-gray-900 mb-2">Why we made this</h2>
             <p>
-              Every semester, students scramble to find or fill housing, often dealing with sketchy listings and strangers they have no way to verify. We think students deserve a place built specifically for them — one that&apos;s safer, easier to use, and actually understands what it&apos;s like to look for housing as a Berkeley student.
+              Every semester, students scramble to find or fill housing, often dealing with sketchy listings and strangers they have no way to verify on messy, decentralized platforms. We think students deserve a place built specifically for them — one that&apos;s safer, easier to use, and actually understands what it&apos;s like to look for housing as a Berkeley student.
             </p>
           </section>
 
