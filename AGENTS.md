@@ -30,6 +30,7 @@ Nestco is a UC Berkeley student sublet marketplace. Students can browse listings
 | `/my-listings` | `app/my-listings/page.tsx` | Manage your own listings — view, edit (full field + photo CRUD + photo reorder via EditModal), delete. Shows red "Expired" badge when `available_to` < today. |
 | `/saved` | `app/saved/page.tsx` | Saved/bookmarked listings |
 | `/tos` | `app/tos/page.tsx` | Terms of Service page. Contact email: support@nestco.ai |
+| `/about` | `app/about/page.tsx` | About us — public page; "Berkeley students building a free housing resource for students." Linked in the Navbar (logged-in and logged-out). |
 | `/login` | `app/login/page.tsx` | Standalone magic link login page — sends OTP via `signInWithOtp` with `shouldCreateUser: false`. For existing users only (including magic-link-only listers who have no password). |
 | `/dev-login` | `app/dev-login/page.tsx` | Dev-only login tool (returns null in production). Shows buttons for each dev email, calls `/api/dev-login` to generate a magic link without sending an email. |
 | `/auth/callback` | `app/auth/callback/page.tsx` | Auth callback — reads `?next=` param (defaults to `/`) and redirects after SIGNED_IN. Uses both `onAuthStateChange` and `getSession()` fallback to fix race condition where SIGNED_IN fires before listener registers. |
@@ -145,7 +146,7 @@ The `/api/match-requests` endpoint verifies the Bearer token, fetches the listin
 - The app is launched: any authenticated user can access Browse (`/`), Requests, My listings, Saved, Inbox, and Profile — all shown in `Navbar.tsx` (desktop + mobile). The logo and the "Browse" link point to `/`.
 - **Canonical browse URL is `/`** (the root), not `/browse`. All internal navigation uses `/` and `/?listing=<id>`; `/browse` only exists as a redirect. When updating links, point to `/`, not `/browse`.
 - `RouteGuard.tsx`:
-  - `PUBLIC_PATHS` (no login): `/login`, `/dev-login`, `/demo`, `/tos`, `/auth/callback`.
+  - `PUBLIC_PATHS` (no login): `/login`, `/dev-login`, `/demo`, `/tos`, `/about`, `/auth/callback`.
   - `ADMIN_PATHS` (admin emails only, via `isAdminEmail`): `/admin`, `/workspace`. Non-admins are bounced to `/`.
   - Everything else requires authentication; unauthenticated visitors are redirected to `/login`.
 - Unauthenticated users see a "Log in" link (href="/login") in the Navbar (desktop + mobile).

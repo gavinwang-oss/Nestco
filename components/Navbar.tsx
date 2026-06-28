@@ -94,6 +94,7 @@ export default function Navbar() {
                 {navLink("/my-listings", "My listings")}
                 {navLink("/saved", "Saved")}
                 {navLink("/inbox", "Inbox", unreadCount)}
+                {navLink("/about", "About")}
 
                 {/* Divider */}
                 <div className="w-px h-4 bg-black/[0.08] mx-2" />
@@ -121,6 +122,7 @@ export default function Navbar() {
               </>
             ) : (
               <>
+                {navLink("/about", "About")}
                 <a
                   href="mailto:support@nestco.ai"
                   className="px-3 py-1.5 text-sm text-gray-400 hover:text-gray-700 rounded-lg hover:bg-black/[0.04] transition-all"
@@ -180,12 +182,20 @@ export default function Navbar() {
                 </button>
               </>
             ) : (
-              <Link
-                href="/login"
-                className="px-3 py-1.5 text-sm font-medium text-gray-900 bg-black/[0.06] hover:bg-black/[0.1] rounded-lg transition-all"
-              >
-                Log in
-              </Link>
+              <>
+                <Link
+                  href="/about"
+                  className="px-3 py-1.5 text-sm text-gray-500 hover:text-gray-900 rounded-lg hover:bg-black/[0.04] transition-all"
+                >
+                  About
+                </Link>
+                <Link
+                  href="/login"
+                  className="px-3 py-1.5 text-sm font-medium text-gray-900 bg-black/[0.06] hover:bg-black/[0.1] rounded-lg transition-all"
+                >
+                  Log in
+                </Link>
+              </>
             )}
           </div>
         )}
@@ -223,6 +233,10 @@ export default function Navbar() {
             <Link href="/my-listings" onClick={() => setMobileMenuOpen(false)}
               className={`px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${pathname === "/my-listings" ? "bg-black/[0.06] text-gray-900" : "text-gray-600 hover:bg-black/[0.04]"}`}>
               My listings
+            </Link>
+            <Link href="/about" onClick={() => setMobileMenuOpen(false)}
+              className={`px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${pathname === "/about" ? "bg-black/[0.06] text-gray-900" : "text-gray-600 hover:bg-black/[0.04]"}`}>
+              About
             </Link>
             <div className="border-t border-black/[0.06] my-1" />
             <button

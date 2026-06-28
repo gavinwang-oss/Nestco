@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { isAdminEmail } from "@/lib/admin";
 
 // Anyone can visit these (no login required)
-const PUBLIC_PATHS = ["/login", "/dev-login", "/demo", "/tos", "/auth/callback"];
+const PUBLIC_PATHS = ["/login", "/dev-login", "/demo", "/tos", "/about", "/auth/callback"];
 
 // Internal-only routes — restricted to admin emails
 const ADMIN_PATHS = ["/admin", "/workspace"];
