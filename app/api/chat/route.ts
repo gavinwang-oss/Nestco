@@ -48,9 +48,6 @@ type ChatResponse = {
   rankedIds?: unknown;
   scores?: unknown;
   suggestedListingId?: unknown;
-  action?: unknown;
-  compareIds?: unknown;
-  draftContent?: unknown;
 };
 
 function createSupabaseClient() {
@@ -175,7 +172,7 @@ export async function POST(req: NextRequest) {
     const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
     if (!token) {
       return NextResponse.json(
-        { content: "Please log in to use AI search and message drafting." },
+        { content: "Please log in to use AI search." },
         { status: 401 }
       );
     }
@@ -188,7 +185,7 @@ export async function POST(req: NextRequest) {
 
     if (authError || !user) {
       return NextResponse.json(
-        { content: "Please log in to use AI search and message drafting." },
+        { content: "Please log in to use AI search." },
         { status: 401 }
       );
     }
@@ -262,28 +259,17 @@ ${profileSummary}
 CRITICAL INSTRUCTION: You must respond with ONLY a raw JSON object. No markdown, no code blocks, no backticks, no extra text before or after. The entire response must be parseable by JSON.parse().
 
 Format:
-{"content": "your message here", "rankedIds": [id1, id2], "scores": {"id1": 95}, "suggestedListingId": null, "action": null, "compareIds": null, "draftContent": null}
+{"content": "your message here", "rankedIds": [id1, id2], "scores": {"id1": 95}, "suggestedListingId": null}
 
 Rules:
 - rankedIds lists listing IDs [${allIds.join(", ")}] ordered by relevance to the user's accumulated criteria.
 - scores maps listing IDs to 0-100 match percentages. When the user mentions ANY specific criteria (price, dates, type, gender preference, furnishing, utilities, roommates, distance, pets, parking, etc.), score EVERY SINGLE listing ID — do not omit any. A listing that meets ALL stated requirements MUST score exactly 100 — do NOT cap at 95 or 99 to seem more realistic; 100 is a valid and expected score. Only deduct points for criteria the listing explicitly fails to meet — do not deduct for subjective reasons, proximity guesses, or things not mentioned by the user. Partial matches (meets most but not all criteria) score 50-99. Incompatible listings score 10-40. Never omit a listing from scores once criteria exist. Only hard-zero a listing if it is completely incompatible (e.g. wrong gender for a gender-locked listing). If the user has not mentioned any criteria at all, set scores to {}.
 - For gender, distinguish who can move in from the gender of existing roommates. Only use listing fields provided above. Do not infer or recommend based on race, ethnicity, religion, national origin, or other protected characteristics.
 - Keep content to 2-4 sentences. Do not list every listing in content; the UI shows listing cards. Never use markdown formatting (no **bold**, no bullet points with -, no headers) — plain text only.
-- For message drafts, do not include the user's name. Use this exact format when profile data is available: "Hey, I'm a [age]-year-old [gender] [year] [major] student interested in your place. [One short relevant detail if it fits naturally.] I'd love to come check it out — when works?" Include age, year, and major always. Only include [gender] if the user's gender is provided and is not "prefer not to say" — if gender is missing or prefer-not-to-say, drop it entirely and do not leave a grammatical gap (e.g. "I'm a 21-year-old junior" not "I'm a 21-year-old  junior"). Never include race, ethnicity, cultural background, religion, or national origin.
 - When asked about listings, refer to specific ones by their title if they have one, otherwise by address and price.
+- suggestedListingId may be set to a single listing ID when you want to highlight one specific listing for the user to view; otherwise null.
 - Stay focused on housing and redirect off-topic questions.
-- Never mention listing IDs to the user.
-
-Actions:
-- "show_saved" for showing saved listings.
-- "save_current" for saving the current listing.
-- "unsave_current" for removing the current listing from saves.
-- "clear_saved" for removing all saved listings.
-- "compare" for comparing exactly 2 listings; set compareIds to exactly 2 valid listing IDs.
-- "reset" for showing all listings again.
-- "send_draft" when the user approves the last draft.
-- "create_request" when the user wants to be notified about future matches.
-- suggestedListingId must be set when draftContent is generated.`;
+- Never mention listing IDs to the user.`;
 
     const validMessages: ChatMessage[] = [];
     for (const message of messages) {
@@ -308,9 +294,6 @@ Actions:
     let rankedIds: number[] = allIds;
     let scores: Record<string, number> = {};
     let suggestedListingId: number | null = null;
-    let action: string | null = null;
-    let compareIds: number[] | null = null;
-    let draftContent: string | null = null;
 
     try {
       const parsed = parseClaudeJson(raw);
@@ -322,10 +305,6 @@ Actions:
         typeof parsed.suggestedListingId === "number" && allowedIds.has(parsed.suggestedListingId)
           ? parsed.suggestedListingId
           : null;
-      action = typeof parsed.action === "string" ? parsed.action : null;
-      const parsedCompareIds = normalizeNumberArray(parsed.compareIds, allowedIds).slice(0, 2);
-      compareIds = parsedCompareIds.length > 0 ? parsedCompareIds : null;
-      draftContent = typeof parsed.draftContent === "string" ? parsed.draftContent : null;
     } catch {
       content = raw.replace(/\{[\s\S]*\}/, "").trim() || "Sorry, I couldn't process that.";
     }
@@ -335,9 +314,6 @@ Actions:
       rankedIds,
       scores,
       suggestedListingId,
-      action,
-      compareIds,
-      draftContent,
     });
   } catch (error: unknown) {
     console.error("Chat API error:", error);
