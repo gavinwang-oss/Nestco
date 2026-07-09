@@ -5,14 +5,15 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { isAdminEmail } from "@/lib/admin";
 
-// Anyone can visit these (no login required)
-const PUBLIC_PATHS = ["/login", "/dev-login", "/tos", "/about", "/auth/callback"];
+// Anyone can visit these (no login required). "/" is the browse landing — logged-out
+// visitors see the search page but are prompted to sign up before they can view listings.
+const PUBLIC_PATHS = ["/", "/login", "/dev-login", "/tos", "/about", "/auth/callback"];
 
 // Internal-only routes — restricted to admin emails
 const ADMIN_PATHS = ["/admin", "/workspace"];
 
-// Everything else (/ [browse], /inbox, /requests, /saved, /create, /profile,
-// /my-listings, /listings) requires any authenticated user.
+// Everything else (/inbox, /requests, /saved, /create, /profile, /my-listings,
+// /listings) requires any authenticated user.
 
 export default function RouteGuard({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();

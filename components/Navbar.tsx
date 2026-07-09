@@ -123,17 +123,17 @@ export default function Navbar() {
             ) : (
               <>
                 {navLink("/about", "About")}
-                <a
-                  href="mailto:support@nestco.ai"
-                  className="px-3 py-1.5 text-sm text-gray-400 hover:text-gray-700 rounded-lg hover:bg-black/[0.04] transition-all"
-                >
-                  Support
-                </a>
                 <Link
                   href="/login"
-                  className="px-3 py-1.5 text-sm font-medium text-gray-900 bg-black/[0.06] hover:bg-black/[0.1] rounded-lg transition-all"
+                  className="px-3 py-1.5 text-sm text-gray-500 hover:text-gray-900 rounded-lg hover:bg-black/[0.04] transition-all"
                 >
                   Log in
+                </Link>
+                <Link
+                  href="/login"
+                  className="px-3 py-1.5 text-sm font-semibold text-white bg-black hover:bg-gray-800 rounded-lg transition-all"
+                >
+                  Sign up
                 </Link>
               </>
             )}
@@ -185,15 +185,15 @@ export default function Navbar() {
               <>
                 <Link
                   href="/about"
-                  className="px-3 py-1.5 text-sm text-gray-500 hover:text-gray-900 rounded-lg hover:bg-black/[0.04] transition-all"
+                  className="px-2.5 py-1.5 text-sm text-gray-500 hover:text-gray-900 rounded-lg hover:bg-black/[0.04] transition-all"
                 >
                   About
                 </Link>
                 <Link
                   href="/login"
-                  className="px-3 py-1.5 text-sm font-medium text-gray-900 bg-black/[0.06] hover:bg-black/[0.1] rounded-lg transition-all"
+                  className="px-3 py-1.5 text-sm font-semibold text-white bg-black hover:bg-gray-800 rounded-lg transition-all"
                 >
-                  Log in
+                  Sign up
                 </Link>
               </>
             )}

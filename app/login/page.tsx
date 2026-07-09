@@ -23,7 +23,7 @@ export default function Login() {
         email,
         options: {
           emailRedirectTo: appUrl + "/auth/callback?next=/",
-          shouldCreateUser: false,
+          shouldCreateUser: true,
         },
       });
       if (otpError) {
@@ -53,8 +53,8 @@ export default function Login() {
               <span className="text-xl font-semibold tracking-tight text-gray-900">nestco</span>
             </div>
 
-            <h1 className="text-2xl font-bold text-gray-950 mb-1">Sign in</h1>
-            <p className="text-sm text-gray-400 mb-6">We&apos;ll send a magic link to your .edu email.</p>
+            <h1 className="text-2xl font-bold text-gray-950 mb-1">Sign in or sign up</h1>
+            <p className="text-sm text-gray-400 mb-6">Enter your .edu email and we&apos;ll send a magic link. New here? This creates your account.</p>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-3">
               <input

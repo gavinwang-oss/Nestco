@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, Suspense } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/Navbar";
@@ -513,10 +514,40 @@ function readBrowseSnapshot(): BrowseSnapshot | null {
   }
 }
 
+function SignupPromptModal({ listingCount, onClose }: { listingCount: number; onClose: () => void }) {
+  const countLabel = listingCount >= 10 ? `${Math.floor(listingCount / 10) * 10}+` : listingCount > 0 ? `${listingCount}` : "all";
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+      <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white sm:rounded-3xl rounded-t-3xl border border-black/[0.06] shadow-xl p-7 w-full sm:max-w-sm text-center">
+        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 cursor-pointer text-lg">✕</button>
+        <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center mx-auto mb-4">
+          <span className="text-white text-base font-bold">N</span>
+        </div>
+        <h2 className="text-lg font-bold text-gray-950 mb-1">Sign up to see {countLabel} listings</h2>
+        <p className="text-sm text-gray-500 mb-6">
+          Create a free account with your .edu email to search {countLabel} verified Berkeley sublets, message listers, and save your favorites.
+        </p>
+        <Link
+          href="/login"
+          className="block w-full py-3 bg-black text-white text-sm font-semibold rounded-full hover:bg-gray-800 transition-all cursor-pointer"
+        >
+          Sign up with your .edu
+        </Link>
+        <Link href="/login" className="block mt-3 text-xs text-gray-400 hover:text-gray-700 transition-colors">
+          Already have an account? Log in
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 function BrowseContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const [showSignupPrompt, setShowSignupPrompt] = useState(false);
+  const [listingCount, setListingCount] = useState(0);
   // Seed state from the saved session so returning to this tab restores chat + ranked listings.
   const [initialSnapshot] = useState(readBrowseSnapshot);
   const restoredOrderRef = useRef<number[] | null>(initialSnapshot?.displayedIds ?? null);
@@ -550,7 +581,10 @@ function BrowseContent() {
     });
   }, [user]);
 
+  // Only logged-in users load listing data. Logged-out visitors see the landing but must
+  // sign up before viewing any listings.
   useEffect(() => {
+    if (!user) return;
     supabase
       .from("listings")
       .select("*")
@@ -573,7 +607,24 @@ function BrowseContent() {
           }
         }
       });
+  }, [user]);
+
+  // Public listing count for the logged-out sign-up prompt (exposes only a number)
+  useEffect(() => {
+    fetch("/api/listings/count")
+      .then((r) => r.json())
+      .then((d) => { if (typeof d.count === "number") setListingCount(d.count); })
+      .catch(() => {});
   }, []);
+
+  // Logged-out visitors only ever see the landing search view — never the results/grid,
+  // even if a stale session snapshot exists in this tab.
+  useEffect(() => {
+    if (!authLoading && !user) {
+      setHasSearched(false);
+      setSelectedListing(null);
+    }
+  }, [authLoading, user]);
 
   // Persist chat + search context so it survives navigating to another tab and back.
   // Wait until listings have loaded so we never overwrite the saved ranked order with an
@@ -661,6 +712,8 @@ function BrowseContent() {
 
   const handleInitialSearch = async (q: string) => {
     if (!q.trim()) return;
+    // Logged-out visitors can type a search but must sign up to see any results
+    if (!user) { setShowSignupPrompt(true); return; }
     setHasSearched(true);
     setIsTyping(true);
     // On mobile, open the chat panel to show AI response
@@ -737,6 +790,7 @@ function BrowseContent() {
 
   const sendChat = (newMsg: string) => {
     if (!newMsg.trim() || isTyping) return;
+    if (!user) { setShowSignupPrompt(true); return; }
     setIsTyping(true);
     setMessages((prev) => [...prev, { role: "user", content: newMsg }]);
 
@@ -806,7 +860,11 @@ function BrowseContent() {
       style={{ backgroundColor: "#F4F2EC" }}
     >
       <Navbar />
-      <OnboardingTooltip />
+      {user && <OnboardingTooltip />}
+
+      {showSignupPrompt && (
+        <SignupPromptModal listingCount={listingCount} onClose={() => setShowSignupPrompt(false)} />
+      )}
 
       {showProfileModal && (
         <ProfileModal
