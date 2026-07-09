@@ -736,11 +736,7 @@ function BrowseContent() {
   return (
     <div
       className="h-[100dvh] overflow-hidden flex flex-col"
-      style={{
-        backgroundImage: `url('/sb1.png')`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
+      style={{ backgroundColor: "#F4F2EC" }}
     >
       <Navbar />
       <OnboardingTooltip />
