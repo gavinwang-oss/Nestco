@@ -493,17 +493,40 @@ function ListingDetail({
   );
 }
 
+const BROWSE_STATE_KEY = "nestco_browse_state";
+
+type BrowseSnapshot = {
+  messages?: Message[];
+  matchScores?: Record<number, number>;
+  suggestions?: string[];
+  displayedIds?: number[];
+};
+
+// Read the previous browse session (this tab) synchronously so it can seed initial state.
+function readBrowseSnapshot(): BrowseSnapshot | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(BROWSE_STATE_KEY);
+    return raw ? (JSON.parse(raw) as BrowseSnapshot) : null;
+  } catch {
+    return null;
+  }
+}
+
 function BrowseContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
+  // Seed state from the saved session so returning to this tab restores chat + ranked listings.
+  const [initialSnapshot] = useState(readBrowseSnapshot);
+  const restoredOrderRef = useRef<number[] | null>(initialSnapshot?.displayedIds ?? null);
   const [query, setQuery] = useState("");
-  const [hasSearched, setHasSearched] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [hasSearched, setHasSearched] = useState<boolean>(() => !!initialSnapshot?.messages?.length);
+  const [messages, setMessages] = useState<Message[]>(() => initialSnapshot?.messages ?? []);
   const [chatInput, setChatInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [listings, setListings] = useState<Listing[]>([]);
-  const [matchScores, setMatchScores] = useState<Record<number, number>>({});
+  const [matchScores, setMatchScores] = useState<Record<number, number>>(() => initialSnapshot?.matchScores ?? {});
   const [displayedListings, setDisplayedListings] = useState<Listing[]>([]);
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
   const [photoIndex, setPhotoIndex] = useState(0);
@@ -514,7 +537,7 @@ function BrowseContent() {
   const [profileBannerDismissed, setProfileBannerDismissed] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [savedIds, setSavedIds] = useState<Set<number>>(new Set());
-  const [suggestions, setSuggestions] = useState<string[]>(CHAT_SUGGESTIONS);
+  const [suggestions, setSuggestions] = useState<string[]>(() => (initialSnapshot?.suggestions?.length ? initialSnapshot.suggestions : CHAT_SUGGESTIONS));
   const [mobileChatOpen, setMobileChatOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<HTMLInputElement>(null);
@@ -535,11 +558,40 @@ function BrowseContent() {
       .order("created_at", { ascending: false })
       .then(({ data }) => {
         if (data) {
-          setListings(data as Listing[]);
-          setDisplayedListings(data as Listing[]);
+          const all = data as Listing[];
+          setListings(all);
+          // Reapply the previously ranked order if we're restoring a session
+          const order = restoredOrderRef.current;
+          if (order && order.length > 0) {
+            const byId = new Map(all.map((l) => [l.id, l]));
+            const orderSet = new Set(order);
+            const ordered = order.map((id) => byId.get(id)).filter(Boolean) as Listing[];
+            const rest = all.filter((l) => !orderSet.has(l.id));
+            setDisplayedListings([...ordered, ...rest]);
+          } else {
+            setDisplayedListings(all);
+          }
         }
       });
   }, []);
+
+  // Persist chat + search context so it survives navigating to another tab and back.
+  // Wait until listings have loaded so we never overwrite the saved ranked order with an
+  // empty list during the initial render (before the fetch + reorder completes).
+  useEffect(() => {
+    if (listings.length === 0) return;
+    try {
+      sessionStorage.setItem(
+        BROWSE_STATE_KEY,
+        JSON.stringify({
+          messages,
+          matchScores,
+          suggestions,
+          displayedIds: displayedListings.map((l) => l.id),
+        })
+      );
+    } catch {}
+  }, [listings, messages, matchScores, suggestions, displayedListings]);
 
   // Fetch user profile
   useEffect(() => {
