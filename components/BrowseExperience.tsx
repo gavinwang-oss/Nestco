@@ -845,7 +845,7 @@ function BrowseContent() {
           >
             {/* Left: Chat panel — hidden on mobile, shown as overlay when mobileChatOpen */}
             <div className={`
-              sm:w-[38%] sm:flex-shrink-0 sm:border-r sm:border-black/[0.06] sm:flex sm:flex-col sm:bg-white/60 sm:backdrop-blur-sm sm:static sm:z-auto
+              sm:w-[340px] sm:flex-shrink-0 sm:border-r sm:border-black/[0.06] sm:flex sm:flex-col sm:bg-white/60 sm:backdrop-blur-sm sm:static sm:z-auto
               fixed inset-0 z-30 flex flex-col bg-white/95 backdrop-blur-md border-r border-black/[0.06]
               transition-transform duration-300 ease-in-out
               ${mobileChatOpen ? "translate-y-0" : "translate-y-full sm:translate-y-0"}
