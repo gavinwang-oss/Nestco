@@ -48,6 +48,7 @@ type ChatResponse = {
   rankedIds?: unknown;
   scores?: unknown;
   suggestedListingId?: unknown;
+  suggestions?: unknown;
 };
 
 function createSupabaseClient() {
@@ -259,7 +260,7 @@ ${profileSummary}
 CRITICAL INSTRUCTION: You must respond with ONLY a raw JSON object. No markdown, no code blocks, no backticks, no extra text before or after. The entire response must be parseable by JSON.parse().
 
 Format:
-{"content": "your message here", "rankedIds": [id1, id2], "scores": {"id1": 95}, "suggestedListingId": null}
+{"content": "your message here", "rankedIds": [id1, id2], "scores": {"id1": 95}, "suggestedListingId": null, "suggestions": ["Furnished only", "Under $1,000"]}
 
 Rules:
 - rankedIds lists listing IDs [${allIds.join(", ")}] ordered by relevance to the user's accumulated criteria.
@@ -268,6 +269,7 @@ Rules:
 - Keep content to 2-4 sentences. Do not list every listing in content; the UI shows listing cards. Never use markdown formatting (no **bold**, no bullet points with -, no headers) — plain text only.
 - When asked about listings, refer to specific ones by their title if they have one, otherwise by address and price.
 - suggestedListingId may be set to a single listing ID when you want to highlight one specific listing for the user to view; otherwise null.
+- suggestions: 3-4 SHORT tappable follow-up searches (each 2-5 words, no punctuation at the end) that build on the current conversation — refinements or natural next questions the user might want. Examples if they searched a private room under $1,200: ["Only furnished ones", "Under $1,000 instead", "Available before June", "Closest to campus"]. Make them specific to what was just asked and to the listings available; do NOT repeat the exact query. If the conversation just started with no criteria, suggest broad starters. Always return 3-4.
 - Stay focused on housing and redirect off-topic questions.
 - Never mention listing IDs to the user.`;
 
@@ -294,6 +296,7 @@ Rules:
     let rankedIds: number[] = allIds;
     let scores: Record<string, number> = {};
     let suggestedListingId: number | null = null;
+    let suggestions: string[] = [];
 
     try {
       const parsed = parseClaudeJson(raw);
@@ -305,6 +308,13 @@ Rules:
         typeof parsed.suggestedListingId === "number" && allowedIds.has(parsed.suggestedListingId)
           ? parsed.suggestedListingId
           : null;
+      suggestions = Array.isArray(parsed.suggestions)
+        ? parsed.suggestions
+            .filter((s): s is string => typeof s === "string")
+            .map((s) => s.trim())
+            .filter((s) => s.length > 0 && s.length <= 40)
+            .slice(0, 4)
+        : [];
     } catch {
       content = raw.replace(/\{[\s\S]*\}/, "").trim() || "Sorry, I couldn't process that.";
     }
@@ -314,6 +324,7 @@ Rules:
       rankedIds,
       scores,
       suggestedListingId,
+      suggestions,
     });
   } catch (error: unknown) {
     console.error("Chat API error:", error);

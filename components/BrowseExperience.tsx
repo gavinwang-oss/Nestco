@@ -514,6 +514,7 @@ function BrowseContent() {
   const [profileBannerDismissed, setProfileBannerDismissed] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [savedIds, setSavedIds] = useState<Set<number>>(new Set());
+  const [suggestions, setSuggestions] = useState<string[]>(CHAT_SUGGESTIONS);
   const [mobileChatOpen, setMobileChatOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<HTMLInputElement>(null);
@@ -636,6 +637,7 @@ function BrowseContent() {
         const suggested = data.suggestedListingId ? listings.find((l) => l.id === data.suggestedListingId) ?? null : null;
 
         if (data.rankedIds) applyRankedIds(data.rankedIds, listings, numericScores);
+        if (Array.isArray(data.suggestions) && data.suggestions.length > 0) setSuggestions(data.suggestions);
         setMessages([
           userMessage,
           { role: "ai", content: data.content || `Found ${listings.length} listing${listings.length !== 1 ? "s" : ""}. Click any to learn more.`, suggestedListing: suggested ?? undefined },
@@ -708,6 +710,7 @@ function BrowseContent() {
         const suggested = data.suggestedListingId ? listings.find((l) => l.id === data.suggestedListingId) ?? null : null;
 
         if (data.rankedIds) applyRankedIds(data.rankedIds, listings, numericScores);
+        if (Array.isArray(data.suggestions) && data.suggestions.length > 0) setSuggestions(data.suggestions);
         setMessages((prev) => [
           ...prev,
           { role: "ai", content: data.content || "Sorry, I couldn't get a response.", suggestedListing: suggested ?? undefined },
@@ -863,12 +866,12 @@ function BrowseContent() {
               ${mobileChatOpen ? "translate-y-0" : "translate-y-full sm:translate-y-0"}
             `}>
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                {/* Prompt suggestions — above the conversation to guide the user */}
-                {messages.length <= 2 && !isTyping && (
+                {/* Prompt suggestions — above the conversation; update with the conversation */}
+                {!isTyping && suggestions.length > 0 && (
                   <div className="pb-1">
-                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">Try asking</p>
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">{messages.length === 0 ? "Try asking" : "Refine your search"}</p>
                     <div className="flex flex-col gap-1.5">
-                      {CHAT_SUGGESTIONS.map((s) => (
+                      {suggestions.map((s) => (
                         <button
                           key={s}
                           onClick={() => sendChat(s)}
