@@ -634,7 +634,6 @@ function BrowseContent() {
           setMatchScores(numericScores);
         }
         const suggested = data.suggestedListingId ? listings.find((l) => l.id === data.suggestedListingId) ?? null : null;
-        if (suggested) { handleSelectListing(suggested, true); }
 
         if (data.rankedIds) applyRankedIds(data.rankedIds, listings, numericScores);
         setMessages([
@@ -707,7 +706,6 @@ function BrowseContent() {
           setMatchScores(numericScores);
         }
         const suggested = data.suggestedListingId ? listings.find((l) => l.id === data.suggestedListingId) ?? null : null;
-        if (suggested) { handleSelectListing(suggested, true); }
 
         if (data.rankedIds) applyRankedIds(data.rankedIds, listings, numericScores);
         setMessages((prev) => [
@@ -865,6 +863,28 @@ function BrowseContent() {
               ${mobileChatOpen ? "translate-y-0" : "translate-y-full sm:translate-y-0"}
             `}>
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                {/* Prompt suggestions — above the conversation to guide the user */}
+                {messages.length <= 2 && !isTyping && (
+                  <div className="pb-1">
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">Try asking</p>
+                    <div className="flex flex-col gap-1.5">
+                      {CHAT_SUGGESTIONS.map((s) => (
+                        <button
+                          key={s}
+                          onClick={() => sendChat(s)}
+                          className="w-full text-left px-3 py-2.5 bg-white border border-black/[0.06] rounded-xl text-xs text-gray-700 hover:border-black/20 hover:shadow-sm transition-all cursor-pointer flex items-center gap-2 group"
+                        >
+                          <svg className="text-gray-300 group-hover:text-gray-500 transition-colors flex-shrink-0" width="12" height="12" viewBox="0 0 14 14" fill="none">
+                            <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
+                            <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                          </svg>
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {messages.map((msg, i) => (
                   <div
                     key={i}
@@ -955,28 +975,6 @@ function BrowseContent() {
                           />
                         ))}
                       </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Prompt suggestions — fill the space and guide the user */}
-                {messages.length <= 2 && !isTyping && (
-                  <div className="pt-2">
-                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">Try asking</p>
-                    <div className="flex flex-col gap-1.5">
-                      {CHAT_SUGGESTIONS.map((s) => (
-                        <button
-                          key={s}
-                          onClick={() => sendChat(s)}
-                          className="w-full text-left px-3 py-2.5 bg-white border border-black/[0.06] rounded-xl text-xs text-gray-700 hover:border-black/20 hover:shadow-sm transition-all cursor-pointer flex items-center gap-2 group"
-                        >
-                          <svg className="text-gray-300 group-hover:text-gray-500 transition-colors flex-shrink-0" width="12" height="12" viewBox="0 0 14 14" fill="none">
-                            <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
-                            <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-                          </svg>
-                          {s}
-                        </button>
-                      ))}
                     </div>
                   </div>
                 )}
