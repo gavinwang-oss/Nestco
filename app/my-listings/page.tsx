@@ -399,7 +399,7 @@ export default function MyListings() {
 
   if (loading || fetching) {
     return (
-      <div className="min-h-screen flex flex-col" style={{ backgroundImage: `url('/sb1.png')`, backgroundSize: "cover", backgroundPosition: "center", backgroundAttachment: "fixed" }}>
+      <div className="min-h-screen flex flex-col" style={{ backgroundColor: "#F4F2EC" }}>
         <Navbar />
         <div className="flex-1 flex items-center justify-center">
           <p className="text-sm text-gray-400">Loading…</p>
@@ -409,7 +409,7 @@ export default function MyListings() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundImage: `url('/sb1.png')`, backgroundSize: "cover", backgroundPosition: "center", backgroundAttachment: "fixed" }}>
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: "#F4F2EC" }}>
       <Navbar />
 
       {viewingListing && (

@@ -2,10 +2,7 @@
 import Navbar from "@/components/Navbar";
 
 const bgStyle = {
-  backgroundImage: `url('/sb1.png')`,
-  backgroundSize: "cover",
-  backgroundPosition: "center",
-  backgroundAttachment: "fixed",
+  backgroundColor: "#F4F2EC",
 };
 
 export default function AboutPage() {

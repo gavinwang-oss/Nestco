@@ -49,6 +49,15 @@ const EXAMPLE_PROMPTS = [
   "Room near BART under $1,000",
 ];
 
+// Shown in the chat sidebar to guide users on what the AI can do
+const CHAT_SUGGESTIONS = [
+  "Private rooms under $1,200",
+  "Furnished places available in June",
+  "Somewhere close to campus",
+  "Cheapest studios right now",
+  "Female roommates only",
+];
+
 type Message = { role: "user" | "ai"; content: string; listings?: Listing[]; suggestedListing?: Listing };
 
 type Profile = { name: string; age: string; major: string; year_in_school: string; race: string; gender: string; bio: string; avatar_url: string; include_demographics: boolean };
@@ -670,6 +679,11 @@ function BrowseContent() {
     if (!chatInput.trim()) return;
     const newMsg = chatInput;
     setChatInput("");
+    sendChat(newMsg);
+  };
+
+  const sendChat = (newMsg: string) => {
+    if (!newMsg.trim() || isTyping) return;
     setIsTyping(true);
     setMessages((prev) => [...prev, { role: "user", content: newMsg }]);
 
@@ -944,6 +958,29 @@ function BrowseContent() {
                     </div>
                   </div>
                 )}
+
+                {/* Prompt suggestions — fill the space and guide the user */}
+                {messages.length <= 2 && !isTyping && (
+                  <div className="pt-2">
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">Try asking</p>
+                    <div className="flex flex-col gap-1.5">
+                      {CHAT_SUGGESTIONS.map((s) => (
+                        <button
+                          key={s}
+                          onClick={() => sendChat(s)}
+                          className="w-full text-left px-3 py-2.5 bg-white border border-black/[0.06] rounded-xl text-xs text-gray-700 hover:border-black/20 hover:shadow-sm transition-all cursor-pointer flex items-center gap-2 group"
+                        >
+                          <svg className="text-gray-300 group-hover:text-gray-500 transition-colors flex-shrink-0" width="12" height="12" viewBox="0 0 14 14" fill="none">
+                            <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
+                            <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                          </svg>
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div ref={messagesEndRef} />
               </div>
 

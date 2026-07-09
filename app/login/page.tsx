@@ -41,11 +41,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-6"
-      style={{
-        backgroundImage: `url('/sb1.png')`,
-    backgroundSize: "cover",
-    backgroundPosition: "center", backgroundAttachment: "fixed",
-      }}
+      style={{ backgroundColor: "#F4F2EC" }}
     >
       <div className="w-full max-w-sm bg-white rounded-3xl border border-black/[0.06] shadow-sm p-8">
         {!sent ? (

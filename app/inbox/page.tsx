@@ -451,10 +451,8 @@ export default function Inbox() {
   // ── Render ────────────────────────────────────────────────────────────────
 
   const bgStyle = {
-    backgroundImage: `url('/sb1.png')`,
-    backgroundSize: "cover",
-    backgroundPosition: "center", backgroundAttachment: "fixed",
-  };
+  backgroundColor: "#F4F2EC",
+};
 
   if (loading || fetching) {
     return (
